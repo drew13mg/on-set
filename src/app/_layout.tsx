@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Stack } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
@@ -28,6 +29,7 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
     <AuthProvider>
       <SyncProvider>
         <ProjectsProvider>
@@ -49,6 +51,8 @@ export default function RootLayout() {
           <Stack.Screen name="project/[id]/clips" options={projectScreen("Clips")} />
           <Stack.Screen name="project/[id]/sun" options={projectScreen("Sun Tracker")} />
           <Stack.Screen name="project/[id]/equipment" options={projectScreen("Equipment")} />
+          <Stack.Screen name="project/[id]/locations" options={projectScreen("Location Scouting")} />
+          <Stack.Screen name="project/[id]/location/[lid]" options={projectScreen("Location")} />
           <Stack.Screen name="project/[id]/settings" options={{ title: "Project settings", presentation: "modal" }} />
           <Stack.Screen name="groups" options={{ title: "User groups" }} />
           <Stack.Screen name="account" options={{ title: "Account", presentation: "modal" }} />
@@ -58,5 +62,6 @@ export default function RootLayout() {
         </ProjectsProvider>
       </SyncProvider>
     </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

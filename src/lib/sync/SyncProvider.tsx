@@ -6,11 +6,14 @@ import { useAuth } from "../auth";
 import { supabase, supabaseRemote } from "../supabase";
 import { SyncEngine, type Snapshot, type SyncStatus } from "./engine";
 import { REMOTE_NAME, type TableName } from "./model";
+import { uploadPendingPhotos } from "../photo-sync";
+import { clearPhotosFromDevice } from "../photo-files";
 
 const STORE_KEY = "onset.sync.v1";
 const USER_KEY = "onset.sync.user";
 const SAVE_DELAY_MS = 600;
 const PUSH_DELAY_MS = 1500;
+const PHOTO_DELAY_MS = 2500;
 const POLL_MS = 60_000;
 const SHARING_TABLES = ["project_members", "project_groups", "group_members", "user_groups"];
 
@@ -34,6 +37,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const { me, ready: authReady } = useAuth();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const photoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load the device copy.
   useEffect(() => {
@@ -59,6 +63,11 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       if (engine.remote && engine.status.pending > 0 && !engine.status.syncing) {
         if (pushTimer.current) clearTimeout(pushTimer.current);
         pushTimer.current = setTimeout(() => engine.sync(), PUSH_DELAY_MS);
+      }
+      // Photos upload after their rows have synced.
+      if (engine.remote && !engine.status.syncing) {
+        if (photoTimer.current) clearTimeout(photoTimer.current);
+        photoTimer.current = setTimeout(() => uploadPendingPhotos(engine), PHOTO_DELAY_MS);
       }
     });
     const app = AppState.addEventListener("change", (s) => {
@@ -155,5 +164,6 @@ export function useSyncStatus(): SyncStatus {
 /** Wipe this device's copy (used on sign out). */
 export async function clearDeviceData(engine: SyncEngine) {
   engine.reset();
+  clearPhotosFromDevice();
   await AsyncStorage.multiRemove([STORE_KEY, USER_KEY]);
 }

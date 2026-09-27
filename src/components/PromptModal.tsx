@@ -19,6 +19,8 @@ type Props = {
   placeholder?: string;
   initialValue?: string;
   saveLabel?: string;
+  /** Several lines of text (notes). */
+  multiline?: boolean;
   onSave: (value: string) => void;
   onCancel: () => void;
 };
@@ -31,6 +33,7 @@ export function PromptModal({
   placeholder,
   initialValue = "",
   saveLabel = "Save",
+  multiline = false,
   onSave,
   onCancel,
 }: Props) {
@@ -52,10 +55,11 @@ export function PromptModal({
             placeholder={placeholder}
             placeholderTextColor={colors.faint}
             autoFocus
-            selectTextOnFocus
-            returnKeyType="done"
-            onSubmitEditing={() => onSave(value)}
-            style={styles.input}
+            selectTextOnFocus={!multiline}
+            multiline={multiline}
+            returnKeyType={multiline ? "default" : "done"}
+            onSubmitEditing={multiline ? undefined : () => onSave(value)}
+            style={[styles.input, multiline && styles.multiline]}
             accessibilityLabel={title}
           />
           <View style={styles.actions}>
@@ -96,6 +100,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
   },
+  multiline: { minHeight: 140, maxHeight: 280, textAlignVertical: "top" },
   actions: { flexDirection: "row", gap: space.md },
   btn: { flex: 1, alignItems: "center", paddingVertical: space.md, borderRadius: radius.md },
   ghost: { backgroundColor: colors.surfaceRaised },

@@ -30,9 +30,11 @@ export type Snapshot = {
   remoteProjects: Record<string, true>;
 };
 
+const emptyTables = () => Object.fromEntries(TABLE_ORDER.map((t) => [t, {}]));
+
 export const emptySnapshot = (): Snapshot => ({
-  tables: { projects: {}, transcriptions: {}, lines: {}, clips: {}, equipment: {}, library: {} },
-  dirty: { projects: {}, transcriptions: {}, lines: {}, clips: {}, equipment: {}, library: {} },
+  tables: emptyTables() as TableMap,
+  dirty: emptyTables() as DirtyMap,
   cursors: {},
   remoteProjects: {},
 });
@@ -148,7 +150,14 @@ export class SyncEngine {
 
   /** Replace the device copy (e.g. loaded from storage on launch). */
   load(snapshot: Snapshot) {
-    this.state = { ...emptySnapshot(), ...snapshot };
+    // Saved copies from older app versions may lack newer tables.
+    const base = emptySnapshot();
+    this.state = {
+      ...base,
+      ...snapshot,
+      tables: { ...base.tables, ...snapshot.tables },
+      dirty: { ...base.dirty, ...snapshot.dirty },
+    };
     this.emit();
   }
 

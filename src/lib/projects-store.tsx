@@ -4,6 +4,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useAuth } from "./auth";
 import { defaultProjectName, type Project } from "./projects";
 import { supabase } from "./supabase";
+import { removePhotoFiles } from "./photo-sync";
 import { useSync, useSyncVersion } from "./sync/SyncProvider";
 import { uuid } from "./id";
 import type { ProjectRow } from "./sync/model";
@@ -109,6 +110,8 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       if (mine) {
         // Delete for everyone. Offline? Mark it deleted and let sync finish the job.
         if (engine.remote) {
+          const files = engine.all("locationPhotos").filter((p) => p.projectId === id && p.uploaded).map((p) => p.storagePath);
+          if (files.length) await removePhotoFiles(files);
           const { error } = await supabase.from("projects").delete().eq("id", id);
           if (!error) {
             engine.purgeProject(id);

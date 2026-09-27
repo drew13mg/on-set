@@ -222,3 +222,38 @@ test("snapshot round-trips through JSON", () => {
   assert.equal(restored.all("projects").length, 1);
   assert.equal(restored.status.pending, 1);
 });
+
+test("photo's on-phone file path stays on the device and survives teammates' edits", async () => {
+  const server = new FakeServer();
+  const a = new SyncEngine(undefined, clock);
+  const b = new SyncEngine(undefined, clock);
+  a.setRemote(server.client("alice"));
+  b.setRemote(server.client("bob"));
+  const p = newProject(a, "P");
+  const loc = a.put("locations", { id: uuid(), projectId: p.id, name: "Rooftop", createdAt: 1 });
+  const ph = a.put("locationPhotos", {
+    id: uuid(), projectId: p.id, locationId: loc.id, storagePath: `${p.id}/${loc.id}/x.jpg`, note: "",
+    position: 1, width: 10, height: 10, uploaded: false, createdAt: 1, localUri: "file:///phone/x.jpg",
+  });
+  await a.sync();
+  const onServer = server.table("location_photos").get(ph.id)!;
+  assert.equal("localUri" in onServer || "local_uri" in onServer, false);
+  await b.sync();
+  assert.equal(b.get("locationPhotos", ph.id)?.localUri, undefined);
+  b.patch("locationPhotos", ph.id, { note: "Looking east at golden hour" });
+  await b.sync();
+  await a.sync();
+  assert.equal(a.get("locationPhotos", ph.id)?.note, "Looking east at golden hour");
+  assert.equal(a.get("locationPhotos", ph.id)?.localUri, "file:///phone/x.jpg");
+});
+
+test("an older saved copy without the new tables still loads", () => {
+  const a = new SyncEngine(undefined, clock);
+  const old = JSON.parse(JSON.stringify(a.state));
+  delete old.tables.locations;
+  delete old.dirty.locationPhotos;
+  a.load(old);
+  assert.deepEqual(a.all("locations"), []);
+  a.put("locations", { id: uuid(), projectId: "p", name: "x", createdAt: 1 });
+  assert.equal(a.all("locations").length, 1);
+});

@@ -61,6 +61,16 @@ Build a gear list for the project, then use it as a checklist.
 
 Weather and place search use [Open-Meteo](https://open-meteo.com) (free, no API key). Street addresses use the phone's built-in geocoder.
 
+### Location Scouting
+The places you're considering for the project.
+
+- **Locations list:** **New location** (give it a name), or tap a previously added location to open it. Each shows a cover photo and how many photos/notes it has. **Press and hold** to rename or delete.
+- **Photos:** up to **10 per location**. Tap **Add photo** → **Take photo** (camera) or **Choose from library** (pick several at once). Photos are resized to 2048 px on the long edge to keep uploads fast on set.
+- **Photo notes:** press and hold a photo → **Add note** / **Edit note** (or tap **Add note** in full screen). A small NOTE badge marks photos that have one.
+- **Full screen:** tap a photo. Its note shows on the photo. **Swipe left/right** for the next/previous photo, **pinch in** (squeeze two fingers) or tap the **back arrow** (top left) to exit.
+- **Location notes:** **+ Add note** for as many notes as you need. **Press and hold** a note to edit or delete it.
+- Shared with everyone on the project. Photos are kept on the phone that took them and upload in the background when signed in and online; teammates see a placeholder until the upload finishes. Stored in a private bucket only people on the project can access.
+
 ## Project layout
 
 ```
@@ -73,6 +83,8 @@ src/app/                    screens (Expo Router: every file is a route)
   project/[id]/clips.tsx
   project/[id]/sun.tsx
   project/[id]/equipment.tsx
+  project/[id]/locations.tsx       location scouting list
+  project/[id]/location/[lid].tsx  one location: photos + notes (PhotoViewer for full screen)
   project/[id]/settings.tsx   project settings (gear, top right): sharing, rename, delete/leave
   account.tsx               sign in (Apple, Google, email) / account
   auth-callback.tsx         opened by the confirm-email link

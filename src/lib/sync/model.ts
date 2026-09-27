@@ -32,6 +32,23 @@ export type EquipmentRow = Synced & {
   position: number;
 };
 export type LibraryRow = Synced & { name: string };
+export type LocationRow = Synced & { projectId: string; name: string; createdAt: number };
+export type LocationNoteRow = Synced & { projectId: string; locationId: string; text: string; createdAt: number };
+export type LocationPhotoRow = Synced & {
+  projectId: string;
+  locationId: string;
+  /** Where the file lives in cloud storage: <project>/<location>/<photo>.jpg */
+  storagePath: string;
+  note: string;
+  position: number;
+  width: number | null;
+  height: number | null;
+  /** The file has reached cloud storage (other devices can download it). */
+  uploaded: boolean;
+  createdAt: number;
+  /** This device only: the photo file on this phone. Never uploaded as data. */
+  localUri?: string;
+};
 
 export type Tables = {
   projects: ProjectRow;
@@ -40,13 +57,26 @@ export type Tables = {
   clips: ClipRow;
   equipment: EquipmentRow;
   library: LibraryRow;
+  locations: LocationRow;
+  locationNotes: LocationNoteRow;
+  locationPhotos: LocationPhotoRow;
 };
 export type TableName = keyof Tables;
 
 /** Upload order: parents before children so foreign keys are satisfied. */
-export const TABLE_ORDER: TableName[] = ["projects", "transcriptions", "lines", "clips", "equipment", "library"];
+export const TABLE_ORDER: TableName[] = [
+  "projects",
+  "transcriptions",
+  "lines",
+  "clips",
+  "equipment",
+  "library",
+  "locations",
+  "locationNotes",
+  "locationPhotos",
+];
 /** Tables whose rows belong to a project. */
-export const PROJECT_TABLES: TableName[] = ["transcriptions", "lines", "clips", "equipment"];
+export const PROJECT_TABLES: TableName[] = ["transcriptions", "lines", "clips", "equipment", "locations", "locationNotes", "locationPhotos"];
 
 export const REMOTE_NAME: Record<TableName, string> = {
   projects: "projects",
@@ -55,6 +85,9 @@ export const REMOTE_NAME: Record<TableName, string> = {
   clips: "clips",
   equipment: "equipment_items",
   library: "equipment_library",
+  locations: "locations",
+  locationNotes: "location_notes",
+  locationPhotos: "location_photos",
 };
 
 type RemoteRow = Record<string, unknown>;
@@ -166,6 +199,68 @@ export const MAP: { [T in TableName]: { toRemote: (r: Tables[T]) => RemoteRow; f
   library: {
     toRemote: (r) => ({ id: r.id, name: r.name, updated_ms: r.updatedMs, deleted: r.deleted }),
     fromRemote: (r) => ({ id: String(r.id), name: String(r.name), updatedMs: num(r.updated_ms), deleted: !!r.deleted }),
+  },
+  locations: {
+    toRemote: (r) => ({ id: r.id, project_id: r.projectId, name: r.name, created_ms: r.createdAt, updated_ms: r.updatedMs, deleted: r.deleted }),
+    fromRemote: (r) => ({
+      id: String(r.id),
+      projectId: String(r.project_id),
+      name: String(r.name),
+      createdAt: num(r.created_ms),
+      updatedMs: num(r.updated_ms),
+      deleted: !!r.deleted,
+    }),
+  },
+  locationNotes: {
+    toRemote: (r) => ({
+      id: r.id,
+      project_id: r.projectId,
+      location_id: r.locationId,
+      text: r.text,
+      created_ms: r.createdAt,
+      updated_ms: r.updatedMs,
+      deleted: r.deleted,
+    }),
+    fromRemote: (r) => ({
+      id: String(r.id),
+      projectId: String(r.project_id),
+      locationId: String(r.location_id),
+      text: String(r.text),
+      createdAt: num(r.created_ms),
+      updatedMs: num(r.updated_ms),
+      deleted: !!r.deleted,
+    }),
+  },
+  locationPhotos: {
+    // localUri stays on the device; everything else is shared.
+    toRemote: (r) => ({
+      id: r.id,
+      project_id: r.projectId,
+      location_id: r.locationId,
+      storage_path: r.storagePath,
+      note: r.note,
+      position: r.position,
+      width: r.width,
+      height: r.height,
+      uploaded: r.uploaded,
+      created_ms: r.createdAt,
+      updated_ms: r.updatedMs,
+      deleted: r.deleted,
+    }),
+    fromRemote: (r) => ({
+      id: String(r.id),
+      projectId: String(r.project_id),
+      locationId: String(r.location_id),
+      storagePath: String(r.storage_path),
+      note: String(r.note ?? ""),
+      position: num(r.position),
+      width: r.width == null ? null : num(r.width),
+      height: r.height == null ? null : num(r.height),
+      uploaded: !!r.uploaded,
+      createdAt: num(r.created_ms),
+      updatedMs: num(r.updated_ms),
+      deleted: !!r.deleted,
+    }),
   },
 };
 

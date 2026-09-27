@@ -7,13 +7,14 @@ import { ProjectHeaderRight } from "@/components/SettingsButton";
 import { useProjectClips } from "@/lib/clips-store";
 import { useProjectEquipment } from "@/lib/equipment-store";
 import { useProjectTranscriptions } from "@/lib/transcriptions-store";
+import { useLocations } from "@/lib/scouting-store";
 import { progress } from "@/lib/equipment";
 import { useCurrentProject, useProjects } from "@/lib/projects-store";
 import { useNow } from "@/lib/useNow";
 import { formatTimeOfDay } from "@/lib/clips";
 import { colors, radius, space, type } from "@/lib/theme";
 
-type ToolRoute = "/project/[id]/transcribe" | "/project/[id]/clips" | "/project/[id]/sun" | "/project/[id]/equipment";
+type ToolRoute = "/project/[id]/transcribe" | "/project/[id]/clips" | "/project/[id]/sun" | "/project/[id]/equipment" | "/project/[id]/locations";
 type Tool = { title: string; description: string; route: ToolRoute; meta?: string };
 
 /** A project's tools. New ON SET tools get added to the list below. */
@@ -22,6 +23,7 @@ export default function ProjectHome() {
   const { renameProject } = useProjects();
   const { clips } = useProjectClips(id);
   const { list: transcriptions } = useProjectTranscriptions(id);
+  const { locations } = useLocations(id);
   const { list: gear, reload: reloadGear } = useProjectEquipment(id);
   useFocusEffect(useCallback(() => reloadGear(), [reloadGear]));
   const gearProgress = progress(gear);
@@ -51,6 +53,12 @@ export default function ProjectHome() {
       description: "Build the gear list from saved equipment, then check items off as they arrive.",
       route: "/project/[id]/equipment",
       meta: gearProgress.total ? `${gearProgress.have}/${gearProgress.total} checked` : undefined,
+    },
+    {
+      title: "Location Scouting",
+      description: "Places you're considering: up to 10 photos each, photo notes and location notes.",
+      route: "/project/[id]/locations",
+      meta: locations.length ? (locations.length === 1 ? "1 location" : `${locations.length} locations`) : undefined,
     },
   ];
 

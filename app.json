@@ -46,7 +46,15 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-apple-authentication",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ON SET adds photos from your library to location scouts.",
+          "cameraPermission": "ON SET uses the camera to take location scouting photos.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
