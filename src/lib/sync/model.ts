@@ -63,6 +63,8 @@ export type ShotRow = Synced & {
   listId: string;
   number: number;
   status: ShotStatus;
+  /** When the status last changed (for the live tracker); null if never marked. */
+  statusAt?: number | null;
   description: string;
   createdAt: number;
 };
@@ -322,6 +324,7 @@ export const MAP: { [T in TableName]: { toRemote: (r: Tables[T]) => RemoteRow; f
       list_id: r.listId,
       number: r.number,
       status: r.status,
+      status_ms: r.statusAt ?? null,
       description: r.description,
       created_ms: r.createdAt,
       updated_ms: r.updatedMs,
@@ -333,6 +336,7 @@ export const MAP: { [T in TableName]: { toRemote: (r: Tables[T]) => RemoteRow; f
       listId: String(r.list_id),
       number: num(r.number),
       status: (["none", "active", "done"].includes(String(r.status)) ? r.status : "none") as ShotStatus,
+      statusAt: r.status_ms == null ? null : num(r.status_ms),
       description: String(r.description ?? ""),
       createdAt: num(r.created_ms),
       updatedMs: num(r.updated_ms),

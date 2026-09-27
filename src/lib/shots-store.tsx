@@ -104,7 +104,7 @@ export function useShotList(projectId: string, listId: string) {
   const setStatus = useCallback(
     (shotId: string, status: ShotStatus) => {
       const s = engine.get("shots", shotId);
-      if (s && s.status !== status) engine.patch("shots", shotId, { status });
+      if (s && s.status !== status) engine.patch("shots", shotId, { status, statusAt: Date.now() });
     },
     [engine],
   );

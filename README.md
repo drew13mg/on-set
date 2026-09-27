@@ -78,6 +78,7 @@ Numbered shot tiles to track the shoot.
 - **Shots:** square tiles, **3 across, up to 40 rows (120 shots)**. The shot number sits small in the top-left corner; each shot can have a **title of up to 30 characters** shown in the middle of the tile. Tap **+** to add a shot; **hold +** to add several at once. **Hold a tile** to add/edit its title or delete the shot. Numbers stay with their shot (deleting one leaves a gap, like paperwork).
 - **Marking:** tap a tile to select it, then use the buttons at the bottom: **Done** turns it red, **Active** turns it green, **Uncheck** puts it back.
 - **Start** (top of a list) makes it the project's **active shot list** — only one at a time; starting another stops the previous. Tap the green "Active" bar to stop. The active list is available to other tools via `useActiveShotList(projectId)` in `src/lib/shots-store.tsx`.
+- **Live tracker** (button at the top of the Shot List page): one row per list in three columns — **Shot list** title, **Last done** (the most recently marked-done shot, with its time) and **Active** (every shot currently green). The started list is pinned to the top. It updates as anyone on the project marks shots; tap a row to open that list.
 - Shared live with everyone on the project.
 
 ## Project layout
@@ -96,6 +97,7 @@ src/app/                    screens (Expo Router: every file is a route)
   project/[id]/location/[lid].tsx  one location: photos + notes (PhotoViewer for full screen)
   project/[id]/shot-lists.tsx      shot lists
   project/[id]/shot-list/[sid].tsx one list: tiles, Start, Done / Active / Uncheck
+  project/[id]/shot-tracker.tsx    live tracker: list · last done · active
   project/[id]/settings.tsx   project settings (gear, top right): sharing, rename, delete/leave
   account.tsx               sign in (Apple, Google, email) / account
   auth-callback.tsx         opened by the confirm-email link

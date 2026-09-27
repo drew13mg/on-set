@@ -34,6 +34,16 @@ export default function ShotLists() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={{ gap: space.lg, marginBottom: space.sm }}>
+            <Pressable
+              onPress={() => router.push({ pathname: "/project/[id]/shot-tracker", params: { id: projectId } })}
+              style={({ pressed }) => [styles.trackerBtn, pressed && { opacity: 0.85 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Live tracker"
+            >
+              <View style={styles.trackerDot} />
+              <Text style={[type.button, { color: colors.text }]}>Live tracker</Text>
+              <Text style={[type.small, { color: colors.muted }]}>last done · active</Text>
+            </Pressable>
             <Pressable onPress={() => setDialog({ kind: "new" })} style={({ pressed }) => [styles.newBtn, pressed && { opacity: 0.85 }]} accessibilityRole="button">
               <Text style={styles.plus}>+</Text>
               <Text style={[type.button, { color: colors.bg }]}>New shot list</Text>
@@ -160,6 +170,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: space.sm,
   },
+  trackerBtn: {
+    height: 52,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.markIn,
+    backgroundColor: "rgba(52, 211, 153, 0.08)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: space.sm,
+  },
+  trackerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.record },
   plus: { fontSize: 22, lineHeight: 24, color: colors.bg, fontWeight: "600" },
   empty: { color: colors.muted, textAlign: "center", marginTop: space.lg, paddingHorizontal: space.lg },
   card: {

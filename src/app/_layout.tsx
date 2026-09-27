@@ -55,6 +55,7 @@ export default function RootLayout() {
           <Stack.Screen name="project/[id]/location/[lid]" options={projectScreen("Location")} />
           <Stack.Screen name="project/[id]/shot-lists" options={projectScreen("Shot List")} />
           <Stack.Screen name="project/[id]/shot-list/[sid]" options={projectScreen("Shot list")} />
+          <Stack.Screen name="project/[id]/shot-tracker" options={projectScreen("Live Tracker")} />
           <Stack.Screen name="project/[id]/settings" options={{ title: "Project settings", presentation: "modal" }} />
           <Stack.Screen name="groups" options={{ title: "User groups" }} />
           <Stack.Screen name="account" options={{ title: "Account", presentation: "modal" }} />

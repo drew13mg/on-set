@@ -12,6 +12,8 @@ import {
   MAX_SHOTS,
   nextShotNumber,
   progressLabel,
+  shotLabel,
+  trackerRows,
   shotsToAdd,
 } from "../src/lib/shots.ts";
 import type { ShotListRow, ShotRow } from "../src/lib/sync/model.ts";
@@ -90,4 +92,27 @@ test("shot titles: up to 30 characters, tidy spacing", () => {
   assert.equal(cleanTitle("Coach walks to locker room door, slow push in").length, 30);
   assert.equal(cleanTitle("   "), "");
   assert.equal(cleanTitle("Line\nbreak"), "Line break");
+});
+
+test("live tracker: last done and active shots per list", () => {
+  const lists = [list("a", "Day 1", 500, { createdAt: 1 }), list("b", "Day 2", null, { createdAt: 2 }), list("x", "Gone", null, { deleted: true })];
+  const shots = [
+    shot(1, { listId: "a", status: "done", statusAt: 100, description: "Wide" }),
+    shot(2, { listId: "a", status: "done", statusAt: 300, description: "Coach speech" }), // most recently done
+    shot(3, { listId: "a", status: "done", statusAt: 200, description: "Door" }),
+    shot(4, { listId: "a", status: "active", statusAt: 310, description: "Cade CU" }),
+    shot(5, { listId: "a", status: "active", statusAt: 400 }),
+    shot(6, { listId: "a", status: "none", statusAt: 999 }),
+    shot(7, { listId: "a", status: "done", statusAt: 999, deleted: true }),
+    shot(1, { id: "b1", listId: "b", status: "none" }),
+  ];
+  const rows = trackerRows(lists, shots, "p");
+  assert.deepEqual(rows.map((r) => r.listName), ["Day 1", "Day 2"]); // started list first, deleted hidden
+  assert.equal(rows[0].started, true);
+  assert.deepEqual(rows[0].lastDone, { number: 2, title: "Coach speech", at: 300 });
+  assert.deepEqual(rows[0].active.map((a) => a.number), [5, 4]);
+  assert.equal(rows[1].lastDone, null);
+  assert.deepEqual(rows[1].active, []);
+  assert.equal(shotLabel({ number: 2, title: "Coach speech", at: 1 }), "2 · Coach speech");
+  assert.equal(shotLabel({ number: 5, title: "", at: 1 }), "Shot 5");
 });
