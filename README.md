@@ -8,17 +8,19 @@ The first screen. Tap **New project** to start one (it opens straight into its t
 ## Tools
 
 ### Transcribe
-Live speech-to-text from the phone's microphone.
+Named transcriptions, each with its own transcript and clip list.
 
-- **Start transcribing** begins a live transcript. Each finished line is stamped with the time of day it was heard.
-- **Mark In** stamps the time of day the moment it's tapped (device clock, 24-hour `HH:MM:SS`).
-- **Mark Out** stamps the time of day and opens a window to name the clip.
-- Saved clips keep their IN / OUT times, length, and the dialogue heard between them.
-- Transcription restarts automatically when the recognizer times out during silence, so it keeps running until you tap Stop.
-- On iOS, speech is processed on the device (no network needed).
+- **Transcriptions list:** tap **New transcription** and name it (e.g. "Locker room interviews", "Day 2 – B camera"). It opens the recorder. Saved transcriptions are listed newest first with date, recorded time span, clip count and word count. Tap to open and keep adding; **press and hold** to rename, email or delete.
+- **Recorder:** **Start transcribing** for live speech-to-text; each line is stamped with the time of day. **Mark In** / **Mark Out** stamp the time of day when tapped, then a window pops up to name the clip. Saved clips' IN/OUT marks appear in the transcript where they happened. Lines are saved as they arrive, so a transcription can be stopped and continued later.
+- Transcription restarts automatically during silences, so it keeps running until you tap Stop. On iOS, speech is processed on the device.
+- **Email (any time):** from the recorder header, the transcriptions list, or the Clips screen. Sends a plain-text version for editors:
+  - header (project, transcription, date, recorded time span)
+  - numbered clip list sorted by IN time: name, IN, OUT, length, dialogue
+  - full timestamped transcript with `>> IN` / `<< OUT` clip marks in place
+  Uses the phone's Mail app when set up, otherwise the share sheet (Gmail, Outlook, etc.).
 
 ### Clips
-The project's named clips, saved on the device. Tap to rename, hold for rename / delete, **Share** to send a text log (sorted by IN time) to an editor or script supervisor.
+Every clip in the project, grouped by transcription, each group with its own **Email** button. Tap a clip to rename; hold for rename / delete. **Share** sends all groups as text.
 
 ### Sun Tracker
 Where the sun will be at any time and date, anywhere, plus live weather there.
@@ -51,7 +53,8 @@ src/app/                    screens (Expo Router: every file is a route)
   _layout.tsx               app shell, fonts, header style
   index.tsx                 projects (first screen)
   project/[id]/index.tsx    a project's tools (add new tools here)
-  project/[id]/transcribe.tsx
+  project/[id]/transcribe.tsx          transcriptions list
+  project/[id]/transcription/[tid].tsx recorder for one transcription
   project/[id]/clips.tsx
   project/[id]/sun.tsx
   project/[id]/equipment.tsx

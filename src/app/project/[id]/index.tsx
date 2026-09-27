@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PromptModal } from "@/components/PromptModal";
 import { useProjectClips } from "@/lib/clips-store";
 import { useProjectEquipment } from "@/lib/equipment-store";
+import { useProjectTranscriptions } from "@/lib/transcriptions-store";
 import { progress } from "@/lib/equipment";
 import { useCurrentProject, useProjects } from "@/lib/projects-store";
 import { useNow } from "@/lib/useNow";
@@ -19,6 +20,7 @@ export default function ProjectHome() {
   const { id, project } = useCurrentProject();
   const { renameProject } = useProjects();
   const { clips } = useProjectClips(id);
+  const { list: transcriptions } = useProjectTranscriptions(id);
   const { list: gear, reload: reloadGear } = useProjectEquipment(id);
   useFocusEffect(useCallback(() => reloadGear(), [reloadGear]));
   const gearProgress = progress(gear);
@@ -28,12 +30,13 @@ export default function ProjectHome() {
   const tools: Tool[] = [
     {
       title: "Transcribe",
-      description: "Live speech-to-text with Mark In / Mark Out at time of day.",
+      description: "Named transcriptions with Mark In / Mark Out at time of day. Email transcript + clips.",
       route: "/project/[id]/transcribe",
+      meta: transcriptions.length ? `${transcriptions.length} saved` : undefined,
     },
     {
       title: "Clips",
-      description: "Named IN/OUT marks with the dialogue heard between them.",
+      description: "Every clip in the project, grouped by transcription.",
       route: "/project/[id]/clips",
       meta: clips.length === 1 ? "1 saved" : `${clips.length} saved`,
     },

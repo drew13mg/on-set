@@ -1,44 +1,89 @@
-import { useState } from "react";
-import { FlatList, Pressable, Share, StyleSheet, Text, View } from "react-native";
-import { Stack } from "expo-router";
+import { useMemo, useState } from "react";
+import { Pressable, SectionList, Share, StyleSheet, Text, View } from "react-native";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActionSheet } from "@/components/ActionSheet";
 import { NameClipModal } from "@/components/NameClipModal";
 import { useProjectClips } from "@/lib/clips-store";
 import { useCurrentProject } from "@/lib/projects-store";
 import { clipsToText, formatDuration, formatTimeOfDay, type Clip } from "@/lib/clips";
+import { emailText } from "@/lib/email";
+import { exportSubject, exportText, type Transcription } from "@/lib/transcriptions";
+import { useProjectTranscriptions } from "@/lib/transcriptions-store";
 import { colors, radius, space, type } from "@/lib/theme";
 
 export default function Clips() {
   const { id: projectId, project } = useCurrentProject();
+  const { t: onlyTid } = useLocalSearchParams<{ t?: string }>();
   const { clips, renameClip, removeClip } = useProjectClips(projectId);
+  const { list: transcriptions } = useProjectTranscriptions(projectId);
   const [editing, setEditing] = useState<Clip | null>(null);
   const [menuFor, setMenuFor] = useState<Clip | null>(null);
   const [deleting, setDeleting] = useState<Clip | null>(null);
 
-  const shareAll = () => {
-    if (clips.length) Share.share({ message: `${project?.name ?? "ON SET"}\n\n${clipsToText(clips)}` }).catch(() => {});
+  // One section per transcription (named group), newest first; clips sorted by IN time.
+  const sections = useMemo(() => {
+    const byInTime = (a: Clip, b: Clip) => a.inAt - b.inAt;
+    const groups: { key: string; title: string; t?: Transcription; data: Clip[] }[] = transcriptions
+      .filter((t) => !onlyTid || t.id === onlyTid)
+      .map((t) => ({ key: t.id, title: t.name, t, data: clips.filter((c) => c.transcriptionId === t.id).sort(byInTime) }))
+      .filter((g) => g.data.length > 0 || g.key === onlyTid);
+    const known = new Set(transcriptions.map((t) => t.id));
+    const loose = clips.filter((c) => !c.transcriptionId || !known.has(c.transcriptionId)).sort(byInTime);
+    if (loose.length && !onlyTid) groups.push({ key: "other", title: "Other clips", data: loose });
+    return groups;
+  }, [clips, transcriptions, onlyTid]);
+
+  const projectName = project?.name ?? "ON SET";
+  const emailGroup = (g: { title: string; t?: Transcription; data: Clip[] }) => {
+    if (g.t) emailText(exportSubject(projectName, g.t), exportText(projectName, g.t, clips));
+    else emailText(`${projectName} – ${g.title}`, `${projectName}\n\n${clipsToText(g.data)}`);
   };
+  const shareAll = () => {
+    const text = sections.map((g) => `${g.title.toUpperCase()}\n\n${clipsToText(g.data)}`).join("\n\n");
+    Share.share({ message: `${projectName}\n\n${text}` }).catch(() => {});
+  };
+  const shown = sections.reduce((n, g) => n + g.data.length, 0);
 
   return (
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <Stack.Screen
         options={{
+          title: onlyTid ? sections[0]?.title ?? "Clips" : "Clips",
           headerRight: () =>
-            clips.length ? (
+            shown && !onlyTid ? (
               <Pressable onPress={shareAll} hitSlop={8} style={{ paddingHorizontal: space.sm }}>
                 <Text style={[type.label, { color: colors.text }]}>Share</Text>
               </Pressable>
             ) : null,
         }}
       />
-      <FlatList
-        data={clips}
+      <SectionList
+        sections={sections}
         keyExtractor={(c) => c.id}
         contentContainerStyle={styles.list}
+        stickySectionHeadersEnabled={false}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHead}>
+            <View style={{ flex: 1 }}>
+              <Text style={type.label} numberOfLines={1}>
+                {section.title}
+              </Text>
+              <Text style={type.small}>{section.data.length === 1 ? "1 clip" : `${section.data.length} clips`}</Text>
+            </View>
+            <Pressable onPress={() => emailGroup(section)} hitSlop={8} style={styles.emailBtn}>
+              <Text style={[type.label, { color: colors.text }]}>Email</Text>
+            </Pressable>
+          </View>
+        )}
+        renderSectionFooter={({ section }) =>
+          section.data.length === 0 ? (
+            <Text style={[type.small, { color: colors.faint }]}>No clips marked in this transcription yet.</Text>
+          ) : null
+        }
         ListEmptyComponent={
           <Text style={[type.body, styles.empty]}>
-            No clips yet. In Transcribe, tap Mark In and Mark Out to capture one.
+            No clips yet. In a transcription, tap Mark In and Mark Out to capture one.
           </Text>
         }
         renderItem={({ item }) => (
@@ -69,7 +114,7 @@ export default function Clips() {
           </Pressable>
         )}
       />
-      {clips.length ? <Text style={[type.small, styles.hint]}>Tap to rename · Hold for more options</Text> : null}
+      {shown ? <Text style={[type.small, styles.hint]}>Tap to rename · Hold for more options</Text> : null}
 
       <NameClipModal
         visible={editing !== null}
@@ -126,6 +171,13 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: space.lg,
     gap: space.sm,
+  },
+  sectionHead: { flexDirection: "row", alignItems: "center", gap: space.md, marginTop: space.md },
+  emailBtn: {
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceRaised,
   },
   cardTop: { flexDirection: "row", alignItems: "baseline", gap: space.md },
   times: { color: colors.text },

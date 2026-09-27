@@ -11,6 +11,7 @@ type ClipsContextValue = {
   renameClip: (id: string, name: string) => void;
   removeClip: (id: string) => void;
   removeProjectClips: (projectId: string) => void;
+  removeTranscriptionClips: (transcriptionId: string) => void;
 };
 
 const ClipsContext = createContext<ClipsContextValue | null>(null);
@@ -48,9 +49,14 @@ export function ClipsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const removeTranscriptionClips = useCallback(
+    (transcriptionId: string) => setClips((cs) => cs.filter((c) => c.transcriptionId !== transcriptionId)),
+    [],
+  );
+
   const value = useMemo(
-    () => ({ clips, loaded, addClip, renameClip, removeClip, removeProjectClips }),
-    [clips, loaded, addClip, renameClip, removeClip, removeProjectClips],
+    () => ({ clips, loaded, addClip, renameClip, removeClip, removeProjectClips, removeTranscriptionClips }),
+    [clips, loaded, addClip, renameClip, removeClip, removeProjectClips, removeTranscriptionClips],
   );
   return <ClipsContext.Provider value={value}>{children}</ClipsContext.Provider>;
 }

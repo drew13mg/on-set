@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useLocalSearchParams } from "expo-router";
 import { createProject, sortProjects, type Project } from "./projects";
 import { useClips } from "./clips-store";
+import { useTranscriptions } from "./transcriptions-store";
 
 const STORAGE_KEY = "onset.projects.v1";
 
@@ -24,6 +25,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loaded, setLoaded] = useState(false);
   const { removeProjectClips } = useClips();
+  const { removeForProject: removeProjectTranscriptions } = useTranscriptions();
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
@@ -64,11 +66,12 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     (id: string) => {
       setProjects((ps) => ps.filter((p) => p.id !== id));
       removeProjectClips(id);
+      removeProjectTranscriptions(id);
       AsyncStorage.getAllKeys()
         .then((keys) => AsyncStorage.multiRemove(keys.filter((k) => k.startsWith(`onset.project.${id}.`))))
         .catch(() => {});
     },
-    [removeProjectClips],
+    [removeProjectClips, removeProjectTranscriptions],
   );
 
   const sorted = useMemo(() => sortProjects(projects), [projects]);

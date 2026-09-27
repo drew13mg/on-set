@@ -14,6 +14,8 @@ export type Clip = {
   id: string;
   /** Project this clip belongs to. */
   projectId: string;
+  /** Transcription (named group) this clip was marked in. */
+  transcriptionId?: string;
   name: string;
   /** Epoch ms of the Mark In press (time of day). */
   inAt: number;
@@ -76,6 +78,7 @@ export function makeId(): string {
 /** Build a clip, falling back to the default name if the user left it blank. */
 export function createClip(args: {
   projectId: string;
+  transcriptionId?: string;
   name: string;
   inAt: number;
   outAt: number;
@@ -88,6 +91,7 @@ export function createClip(args: {
   return {
     id: makeId(),
     projectId: args.projectId,
+    ...(args.transcriptionId ? { transcriptionId: args.transcriptionId } : {}),
     name,
     inAt: args.inAt,
     outAt: args.outAt,
