@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,6 +7,7 @@ import { PromptModal } from "@/components/PromptModal";
 import { useCurrentProject } from "@/lib/projects-store";
 import { defaultListName, duplicateName, listProgress, progressLabel } from "@/lib/shots";
 import { useShotLists } from "@/lib/shots-store";
+import { enableShotNotifications, pushPermission } from "@/lib/push";
 import type { ShotListRow } from "@/lib/sync/model";
 import { formatTimeOfDay } from "@/lib/clips";
 import { colors, radius, space, type } from "@/lib/theme";
@@ -20,9 +21,18 @@ type Dialog =
 
 /** A project's shot lists: start a new one or open one to edit. */
 export default function ShotLists() {
-  const { id: projectId } = useCurrentProject();
+  const { id: projectId, project } = useCurrentProject();
   const { lists, shots, add, rename, remove, duplicate } = useShotLists(projectId);
   const [dialog, setDialog] = useState<Dialog>(null);
+
+  // On a shared project, ask (once) whether ON SET may notify you when the team marks shots.
+  const shared = !!project?.isCloud;
+  useEffect(() => {
+    if (!shared) return;
+    pushPermission().then((p) => {
+      if (p === "undetermined") enableShotNotifications();
+    });
+  }, [shared]);
 
   const open = (l: { id: string }) => router.push({ pathname: "/project/[id]/shot-list/[sid]", params: { id: projectId, sid: l.id } });
 

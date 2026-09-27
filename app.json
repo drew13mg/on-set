@@ -54,6 +54,14 @@
           "cameraPermission": "ON SET uses the camera to take location scouting photos.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#34D399",
+          "defaultChannel": "shots"
+        }
       ]
     ],
     "experiments": {

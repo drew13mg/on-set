@@ -65,6 +65,7 @@ export function useShotLists(projectId: string) {
             number: s.number,
             status: "none",
             description: s.description,
+            timeMin: s.timeMin ?? null,
             createdAt: now,
           });
         }
@@ -118,6 +119,15 @@ export function useShotList(projectId: string, listId: string) {
     [engine],
   );
 
+  /** Scheduled time of day in minutes after midnight, or null to clear it. */
+  const setTime = useCallback(
+    (shotId: string, timeMin: number | null) => {
+      const s = engine.get("shots", shotId);
+      if (s && (s.timeMin ?? null) !== timeMin) engine.patch("shots", shotId, { timeMin });
+    },
+    [engine],
+  );
+
   const removeShot = useCallback((shot: ShotRow) => engine.remove("shots", shot.id), [engine]);
 
   /** Make this the project's active shot list (any other started list is stopped). */
@@ -133,7 +143,7 @@ export function useShotList(projectId: string, listId: string) {
 
   const stop = useCallback(() => engine.patch("shotLists", listId, { startedAt: null }), [engine, listId]);
 
-  return { list, shots, addShots, setStatus, setTitle, removeShot, start, stop };
+  return { list, shots, addShots, setStatus, setTitle, setTime, removeShot, start, stop };
 }
 
 /** The project's active (started) shot list and its shots. For tools that follow the shoot live. */

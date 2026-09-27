@@ -8,6 +8,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { uuid } from "./id";
 import { parseAuthLink } from "./email-auth";
+import { unregisterPush } from "./push";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -171,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    await unregisterPush();
     await supabase.auth.signOut();
   }, []);
 

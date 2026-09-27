@@ -1,12 +1,26 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { ActionSheet } from "@/components/ActionSheet";
 import { PromptModal } from "@/components/PromptModal";
+import { ScheduleGraph } from "@/components/ScheduleGraph";
 import { useCurrentProject } from "@/lib/projects-store";
-import { ACTION_STATUS, COLUMNS, listProgress, MAX_SHOTS, MAX_TITLE, progressLabel } from "@/lib/shots";
+import {
+  ACTION_STATUS,
+  buildSchedule,
+  COLUMNS,
+  formatMinutes,
+  listProgress,
+  MAX_SHOTS,
+  MAX_TITLE,
+  nowOnSchedule,
+  parseTimeOfDay,
+  progressLabel,
+  suggestTime,
+} from "@/lib/shots";
+import { useNow } from "@/lib/useNow";
 import { useShotList } from "@/lib/shots-store";
 import type { ShotRow, ShotStatus } from "@/lib/sync/model";
 import { formatTimeOfDay } from "@/lib/clips";
@@ -18,15 +32,28 @@ const DONE = colors.record; // red
 const ACTIVE = colors.markIn; // green
 
 type Tile = { kind: "shot"; shot: ShotRow } | { kind: "add" };
-type Dialog = { kind: "addMany" } | { kind: "shotMenu"; shot: ShotRow } | { kind: "title"; shot: ShotRow } | { kind: "confirmStop" } | null;
+type Dialog =
+  | { kind: "addMany" }
+  | { kind: "shotMenu"; shot: ShotRow }
+  | { kind: "title"; shot: ShotRow }
+  | { kind: "time"; shot: ShotRow; value: string; error?: string }
+  | { kind: "confirmStop" }
+  | null;
 
 const tap = () => Haptics.selectionAsync().catch(() => {});
+
+/** The time sits top-centre; on narrow tiles, nudge it right just enough to clear a long shot number. */
+function timeNudge(tile: number, n: number): number {
+  const numberWidth = String(n).length * 9 + 4;
+  const room = (tile - space.sm * 2) / 2 - 19; // half the tile, less half the time's width
+  return numberWidth > room ? (numberWidth - room) * 2 : 0;
+}
 
 /** One shot list: numbered tiles 3 across (up to 120), Start at the top, Done / Active / Uncheck at the bottom. */
 export default function ShotListScreen() {
   const { id: projectId } = useCurrentProject();
   const { sid } = useLocalSearchParams<{ sid: string }>();
-  const { list, shots, addShots, setStatus, setTitle, removeShot, start, stop } = useShotList(projectId, String(sid));
+  const { list, shots, addShots, setStatus, setTitle, setTime, removeShot, start, stop } = useShotList(projectId, String(sid));
   const { width } = useWindowDimensions();
   const [selected, setSelected] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -39,6 +66,24 @@ export default function ShotListScreen() {
   const selectedShot = shots.find((s) => s.id === selected);
   const progress = listProgress(shots, String(sid));
   const active = list?.startedAt != null;
+
+  // Schedule graph and "late" tiles, refreshed every 30 s.
+  const now = useNow(30_000);
+  const d = new Date(now);
+  const nowMin = d.getHours() * 60 + d.getMinutes();
+  const schedule = useMemo(() => buildSchedule(shots), [shots]);
+  const late = useMemo(() => {
+    const ids = new Set<string>();
+    if (!schedule || !active) return ids;
+    const at = nowOnSchedule(schedule, nowMin);
+    for (const i of schedule.items) if (i.status === "none" && i.start < at) ids.add(i.id);
+    return ids;
+  }, [schedule, active, nowMin]);
+
+  const openTime = (shot: ShotRow) => {
+    const current = shot.timeMin ?? suggestTime(shots, shot.number);
+    setDialog({ kind: "time", shot, value: current == null ? "" : formatMinutes(current) });
+  };
 
   const add = (n: number) => {
     const added = addShots(n);
@@ -84,6 +129,17 @@ export default function ShotListScreen() {
           </Pressable>
         )}
         <Text style={[type.small, styles.progress]}>{progressLabel(progress)}</Text>
+        <ScheduleGraph
+          schedule={schedule}
+          nowMin={nowMin}
+          live={active}
+          hasShots={shots.length > 0}
+          selectedId={selected}
+          onSelect={(id) => {
+            setSelected(id);
+            tap();
+          }}
+        />
       </View>
 
       {/* Tiles */}
@@ -102,7 +158,7 @@ export default function ShotListScreen() {
             {shots.length === 0 ? (
               <Text style={[type.small, { color: colors.faint }]}>Tap + to add a shot. Hold + to add several at once.</Text>
             ) : (
-              <Text style={[type.small, { color: colors.faint }]}>Hold a shot to give it a title (up to {MAX_TITLE} characters).</Text>
+              <Text style={[type.small, { color: colors.faint }]}>Hold a shot to give it a title (up to {MAX_TITLE} characters) or a time.</Text>
             )}
           </View>
         }
@@ -137,10 +193,17 @@ export default function ShotListScreen() {
               delayLongPress={450}
               style={[styles.tile, styles.shotTile, { width: tile, height: tile, backgroundColor: bg }, isSel && styles.tileSelected]}
               accessibilityRole="button"
-              accessibilityLabel={`Shot ${s.number}${s.description ? `: ${s.description}` : ""}${s.status === "none" ? "" : `, ${s.status}`}`}
+              accessibilityLabel={`Shot ${s.number}${s.description ? `: ${s.description}` : ""}${s.timeMin != null ? `, at ${formatMinutes(s.timeMin)}` : ""}${s.status === "none" ? "" : `, ${s.status}`}`}
               accessibilityState={{ selected: isSel }}
             >
-              <Text style={[styles.number, { color: fg }]}>{s.number}</Text>
+              <View style={styles.tileTop}>
+                <Text style={[styles.number, { color: fg }]}>{s.number}</Text>
+                {s.timeMin != null ? (
+                  <Text style={[styles.time, { color: late.has(s.id) ? colors.markOut : fg, paddingLeft: timeNudge(tile, s.number) }]} numberOfLines={1}>
+                    {formatMinutes(s.timeMin)}
+                  </Text>
+                ) : null}
+              </View>
               <View style={styles.titleWrap}>
                 {s.description ? (
                   <Text style={[styles.title, { color: fg }]} numberOfLines={4}>
@@ -209,6 +272,10 @@ export default function ShotListScreen() {
           dialog?.kind === "shotMenu"
             ? [
                 { label: dialog.shot.description ? "Edit title" : "Add title", onPress: () => setDialog({ kind: "title", shot: dialog.shot }) },
+                { label: dialog.shot.timeMin != null ? `Change time (${formatMinutes(dialog.shot.timeMin)})` : "Set time", onPress: () => openTime(dialog.shot) },
+                ...(dialog.shot.timeMin != null
+                  ? [{ label: "Clear time", onPress: () => { setTime(dialog.shot.id, null); setDialog(null); } }]
+                  : []),
                 {
                   label: "Delete shot",
                   destructive: true,
@@ -231,6 +298,30 @@ export default function ShotListScreen() {
         onCancel={() => setDialog(null)}
         onSave={(v) => {
           if (dialog?.kind === "title") setTitle(dialog.shot.id, v);
+          setDialog(null);
+        }}
+      />
+      <PromptModal
+        visible={dialog?.kind === "time"}
+        title={dialog?.kind === "time" ? `Shot ${dialog.shot.number} time` : ""}
+        message={dialog?.kind === "time" ? (dialog.error ?? "Time of day for this shot, e.g. 9:30, 2:15pm or 1415.") : undefined}
+        placeholder="9:30"
+        initialValue={dialog?.kind === "time" ? dialog.value : ""}
+        saveLabel="Set"
+        onCancel={() => setDialog(null)}
+        onSave={(v) => {
+          if (dialog?.kind !== "time") return;
+          if (!v.trim()) {
+            setTime(dialog.shot.id, null);
+            setDialog(null);
+            return;
+          }
+          const min = parseTimeOfDay(v);
+          if (min == null) {
+            setDialog({ ...dialog, value: v, error: `Couldn't read "${v.trim()}". Try 9:30, 2:15pm or 1415.` });
+            return;
+          }
+          setTime(dialog.shot.id, min);
           setDialog(null);
         }}
       />
@@ -272,7 +363,9 @@ const styles = StyleSheet.create({
   addTile: { borderStyle: "dashed", borderWidth: 1.5, backgroundColor: "transparent", gap: 2 },
   addPlus: { fontSize: 30, lineHeight: 32, color: colors.text },
   shotTile: { alignItems: "stretch", justifyContent: "flex-start", padding: space.sm },
-  number: { fontFamily: fonts.bold, fontSize: 14, fontVariant: ["tabular-nums"], alignSelf: "flex-start" },
+  tileTop: { height: 18, justifyContent: "center" },
+  number: { position: "absolute", left: 0, fontFamily: fonts.bold, fontSize: 14, fontVariant: ["tabular-nums"] },
+  time: { fontFamily: fonts.bold, fontSize: 13, letterSpacing: 0.3, fontVariant: ["tabular-nums"], textAlign: "center" },
   titleWrap: { flex: 1, justifyContent: "center" },
   title: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 16, textAlign: "center" },
   status: { fontFamily: fonts.bold, fontSize: 10, letterSpacing: 1.2, textAlign: "center" },

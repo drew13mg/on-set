@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { router, Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActionSheet } from "@/components/ActionSheet";
@@ -8,6 +8,7 @@ import { SharePanel } from "@/components/SharePanel";
 import { useAuth } from "@/lib/auth";
 import { GroupAccessError, useCurrentProject, useProjects } from "@/lib/projects-store";
 import { useSync, useSyncStatus } from "@/lib/sync/SyncProvider";
+import { useShotNotifications } from "@/lib/push";
 import { colors, radius, space, type } from "@/lib/theme";
 
 /**
@@ -24,6 +25,7 @@ export default function ProjectSettings() {
   const [renaming, setRenaming] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const notifications = useShotNotifications(id, !!me && !!project?.isCloud);
 
   // Make sure a new project is uploaded before it can be shared.
   useEffect(() => {
@@ -68,6 +70,39 @@ export default function ProjectSettings() {
         ) : (
           <SharePanel projectId={id} projectName={project.name} isOwner={project.isOwner} />
         )}
+
+        {/* Notifications */}
+        {me && project.isCloud ? (
+          <>
+            <Text style={[type.heading, styles.section]}>Notifications</Text>
+            <View style={styles.group}>
+              <View style={[styles.item, styles.itemLast]}>
+                <View style={{ flex: 1, gap: 2, paddingRight: space.md }}>
+                  <Text style={type.body}>Shot updates</Text>
+                  <Text style={type.small}>When someone else marks a shot done or active</Text>
+                </View>
+                {notifications.on == null ? (
+                  <ActivityIndicator color={colors.muted} />
+                ) : (
+                  <Switch
+                    value={notifications.on}
+                    onValueChange={notifications.setOn}
+                    trackColor={{ true: colors.markIn, false: colors.surfaceRaised }}
+                    thumbColor={colors.text}
+                    accessibilityLabel="Shot update notifications"
+                  />
+                )}
+              </View>
+            </View>
+            {notifications.on && notifications.permission === "denied" ? (
+              <Pressable onPress={() => Linking.openSettings()}>
+                <Text style={[type.small, { color: colors.markOut }]}>
+                  Notifications are turned off for ON SET on this {Platform.OS === "ios" ? "iPhone" : "phone"}. Tap to open Settings.
+                </Text>
+              </Pressable>
+            ) : null}
+          </>
+        ) : null}
 
         {/* Project */}
         <Text style={[type.heading, styles.section]}>Project</Text>

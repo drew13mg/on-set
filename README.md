@@ -74,11 +74,14 @@ The places you're considering for the project.
 ### Shot List
 Numbered shot tiles to track the shoot.
 
-- **Lists:** **New shot list**, or tap a list to open and edit it. **Press and hold** a list to **Edit name**, **Duplicate** (copies every shot, all unchecked; you're asked to name the copy straight away) or **Delete**.
+- **Lists:** **New shot list**, or tap a list to open and edit it. **Press and hold** a list to **Edit name**, **Duplicate** (copies every shot with its title and time, all unchecked; you're asked to name the copy straight away) or **Delete**.
 - **Shots:** square tiles, **3 across, up to 40 rows (120 shots)**. The shot number sits small in the top-left corner; each shot can have a **title of up to 30 characters** shown in the middle of the tile. Tap **+** to add a shot; **hold +** to add several at once. **Hold a tile** to add/edit its title or delete the shot. Numbers stay with their shot (deleting one leaves a gap, like paperwork).
+- **Times:** hold a tile → **Set time** to give the shot a time of day, shown at the top centre of the tile. Type it however is quickest: `9`, `930`, `14:15`, `2:15pm`. The box is pre-filled at the pace of the previous shots (9:00, 9:20 → suggests 9:40). **Change time** / **Clear time** from the same menu. Duplicated lists keep their times.
+- **Schedule graph** (between Start and the tiles): one bar per timed shot, from its time to the next shot's, coloured like the tiles (red done, green active), with hour marks and an amber line for now. Tap a bar to select that shot. Once the list is started it shows **On schedule / N min behind / N min ahead** (an active shot is on time while now is inside its slot; otherwise the next shot not done is compared with its time), and shots whose time has passed but haven't been started show their time in amber. Times read in shot order, so a night shoot that runs past midnight (22:00 → 01:15) stays in order.
 - **Marking:** tap a tile to select it, then use the buttons at the bottom: **Done** turns it red, **Active** turns it green, **Uncheck** puts it back.
 - **Start** (top of a list) makes it the project's **active shot list** — only one at a time; starting another stops the previous. Tap the green "Active" bar to stop. The active list is available to other tools via `useActiveShotList(projectId)` in `src/lib/shots-store.tsx`.
 - **Live tracker** (button at the top of the Shot List page): one row per list in three columns — **Shot list** title, **Last done** (the most recently marked-done shot, with its time) and **Active** (every shot currently green). The started list is pinned to the top. It updates as anyone on the project marks shots; tap a row to open that list.
+- **Notifications:** on a shared project, everyone else on it gets a push notification when a shot is marked **Done** or **Active** ("Done: Shot 3 · Cade lacing shoes CU (09:45) — Andrew"). Tapping it opens that shot list. You don't get notified for your own marks, and marks made offline that only upload more than 10 minutes later are skipped. The phone asks permission the first time you open Shot List on a shared project; switch it per project in **Project settings → Notifications → Shot updates**. Needs the one-time setup under *Push notifications setup* below.
 - Shared live with everyone on the project.
 
 ## Project layout
@@ -98,13 +101,14 @@ src/app/                    screens (Expo Router: every file is a route)
   project/[id]/shot-lists.tsx      shot lists
   project/[id]/shot-list/[sid].tsx one list: tiles, Start, Done / Active / Uncheck
   project/[id]/shot-tracker.tsx    live tracker: list · last done · active
-  project/[id]/settings.tsx   project settings (gear, top right): sharing, rename, delete/leave
+  project/[id]/settings.tsx   project settings (gear, top right): sharing, notifications, rename, delete/leave
   account.tsx               sign in (Apple, Google, email) / account
   auth-callback.tsx         opened by the confirm-email link
   reset-password.tsx        opened by the reset-password link
   groups.tsx                saved user groups
-src/components/     shared UI (clip naming, sun compass, time slider, place picker, weather cards)
-src/lib/            logic, theme, fonts, hooks (sun.ts, tz.ts, weather.ts are pure + unit tested)
+src/components/     shared UI (ScheduleGraph, clip naming, sun compass, time slider, place picker, weather cards)
+src/lib/            logic, theme, fonts, hooks (sun.ts, tz.ts, weather.ts, shots.ts are pure + unit tested)
+  push.ts           push notifications on the device (permission, token, tap to open)
 tests/              unit tests (node --test)
 ```
 
@@ -116,6 +120,8 @@ Dark slate grey (`#1C2127`) with DIN-style type. Colors, spacing and type styles
 ## Backend
 
 Supabase project **on-set** (`upjtapmgidpmtudjhtpv`, US East). Schema, access rules and functions are in `supabase/migrations/`. Every table has row-level security: people only ever see projects they own, were added to, or are in a linked group for. The app's publishable key is in `src/lib/supabase.ts` (safe to ship; override with `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
+
+Shot notifications are sent from the database: a trigger on `shots` (`private.notify_shot_status`) posts to the Expo push service with `pg_net` for every device registered by someone on the project, except the person who made the change and anyone who muted the project (`notification_mutes`). Devices register through `register_push_token` / `unregister_push_token` (the `push_tokens` table is not readable by the app).
 
 App side: `src/lib/sync/` is the offline-first sync engine (device copy → upload → download → live updates via Supabase Realtime), tested in `tests/sync.test.ts`.
 
@@ -162,6 +168,15 @@ Other commands:
 npm test             # clip logic unit tests
 npm run typecheck    # TypeScript
 ```
+
+## Push notifications setup (once, before the first store or development build)
+
+1. `npx eas-cli@latest init` — links the app to an EAS project and writes `extra.eas.projectId` into `app.json`. Devices need it to get a push token; until then the app skips registering (and says so in the log).
+2. **iOS:** `npx eas-cli@latest credentials -p ios` → set up a **Push Notifications key** (EAS can create the APNs key with your Apple Developer account). Push works on real iPhones and on the iOS Simulator (Xcode 14+).
+3. **Android:** create a Firebase project with the package `com.drew13mg.onset`, add `google-services.json` to the project root and set `"android": { "googleServicesFile": "./google-services.json" }` in `app.json`, then upload the FCM V1 service-account key with `npx eas-cli@latest credentials -p android`.
+4. Make a new build (`eas build --profile development` or `production`). Notifications don't work in Expo Go or on the web.
+
+Guide: https://docs.expo.dev/push-notifications/push-notifications-setup/
 
 ## Store builds
 

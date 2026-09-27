@@ -4,7 +4,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { usePushNotifications } from "@/lib/push";
 import { ProjectsProvider } from "@/lib/projects-store";
 import { SyncProvider } from "@/lib/sync/SyncProvider";
 import { fontSources, fonts } from "@/lib/fonts";
@@ -16,6 +17,13 @@ const projectScreen = (title: string) => ({ route }: { route: { params?: object 
   title,
   headerRight: () => <SettingsButton projectId={String((route.params as { id?: string } | undefined)?.id ?? "")} />,
 });
+
+/** Keeps this device registered for shot notifications and opens the list when one is tapped. */
+function PushNotifications() {
+  const { me } = useAuth();
+  usePushNotifications(me?.id ?? null);
+  return null;
+}
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -34,6 +42,7 @@ export default function RootLayout() {
       <SyncProvider>
         <ProjectsProvider>
         <StatusBar style="light" />
+        <PushNotifications />
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: colors.bg },
