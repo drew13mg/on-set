@@ -33,6 +33,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="transcribe" options={{ title: "Transcribe" }} />
         <Stack.Screen name="clips" options={{ title: "Clips" }} />
+        <Stack.Screen name="sun" options={{ title: "Sun Tracker" }} />
       </Stack>
     </ClipsProvider>
   );

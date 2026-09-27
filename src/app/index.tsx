@@ -25,6 +25,11 @@ export default function Home() {
       href: "/clips",
       meta: clips.length === 1 ? "1 saved" : `${clips.length} saved`,
     },
+    {
+      title: "Sun Tracker",
+      description: "Where the sun will be at any time and date, with live weather on location.",
+      href: "/sun",
+    },
   ];
 
   return (

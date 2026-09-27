@@ -36,7 +36,14 @@
             "com.google.android.googlequicksearchbox"
           ]
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ON SET uses your location to show where the sun will be and the weather where you are shooting."
+        }
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

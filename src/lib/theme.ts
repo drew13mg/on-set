@@ -14,6 +14,16 @@ export const colors = {
   markOut: "#F59E0B",
   record: "#EF4444",
   accent: "#E8EDF2",
+  sun: "#FBBF24",
+};
+
+/** Light-phase colours used by the Sun Tracker (slider track, compass path, chips). */
+export const phaseColors = {
+  night: "#2A313B",
+  blue: "#3B6FD9",
+  golden: "#F59E0B",
+  day: "#E7D9A8",
+  noon: "#E8EDF2",
 };
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
