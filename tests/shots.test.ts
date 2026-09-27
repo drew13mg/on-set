@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   ACTION_STATUS,
+  cleanTitle,
+  MAX_TITLE,
   activeList,
   defaultListName,
   duplicateName,
@@ -79,4 +81,13 @@ test("active list is the most recently started one", () => {
   const lists = [list("a", "A", 100), list("b", "B", 200), list("c", "C"), list("d", "D", 300, { deleted: true }), list("e", "E", 400, { projectId: "q" })];
   assert.equal(activeList(lists, "p")?.id, "b");
   assert.equal(activeList([list("c", "C")], "p"), undefined);
+});
+
+test("shot titles: up to 30 characters, tidy spacing", () => {
+  assert.equal(MAX_TITLE, 30);
+  assert.equal(cleanTitle("  Wide   of   the court  "), "Wide of the court");
+  assert.equal(cleanTitle("Coach walks to locker room door, slow push in"), "Coach walks to locker room doo");
+  assert.equal(cleanTitle("Coach walks to locker room door, slow push in").length, 30);
+  assert.equal(cleanTitle("   "), "");
+  assert.equal(cleanTitle("Line\nbreak"), "Line break");
 });

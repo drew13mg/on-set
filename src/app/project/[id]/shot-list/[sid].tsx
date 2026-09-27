@@ -6,7 +6,7 @@ import * as Haptics from "expo-haptics";
 import { ActionSheet } from "@/components/ActionSheet";
 import { PromptModal } from "@/components/PromptModal";
 import { useCurrentProject } from "@/lib/projects-store";
-import { ACTION_STATUS, COLUMNS, listProgress, MAX_SHOTS, progressLabel } from "@/lib/shots";
+import { ACTION_STATUS, COLUMNS, listProgress, MAX_SHOTS, MAX_TITLE, progressLabel } from "@/lib/shots";
 import { useShotList } from "@/lib/shots-store";
 import type { ShotRow, ShotStatus } from "@/lib/sync/model";
 import { formatTimeOfDay } from "@/lib/clips";
@@ -18,7 +18,7 @@ const DONE = colors.record; // red
 const ACTIVE = colors.markIn; // green
 
 type Tile = { kind: "shot"; shot: ShotRow } | { kind: "add" };
-type Dialog = { kind: "addMany" } | { kind: "shotMenu"; shot: ShotRow } | { kind: "confirmStop" } | null;
+type Dialog = { kind: "addMany" } | { kind: "shotMenu"; shot: ShotRow } | { kind: "title"; shot: ShotRow } | { kind: "confirmStop" } | null;
 
 const tap = () => Haptics.selectionAsync().catch(() => {});
 
@@ -26,7 +26,7 @@ const tap = () => Haptics.selectionAsync().catch(() => {});
 export default function ShotListScreen() {
   const { id: projectId } = useCurrentProject();
   const { sid } = useLocalSearchParams<{ sid: string }>();
-  const { list, shots, addShots, setStatus, removeShot, start, stop } = useShotList(projectId, String(sid));
+  const { list, shots, addShots, setStatus, setTitle, removeShot, start, stop } = useShotList(projectId, String(sid));
   const { width } = useWindowDimensions();
   const [selected, setSelected] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -99,7 +99,11 @@ export default function ShotListScreen() {
         ListFooterComponent={
           <View style={{ gap: space.sm, marginTop: space.md }}>
             {message ? <Text style={[type.small, { color: colors.markOut }]}>{message}</Text> : null}
-            {shots.length === 0 ? <Text style={[type.small, { color: colors.faint }]}>Tap + to add a shot. Hold + to add several at once.</Text> : null}
+            {shots.length === 0 ? (
+              <Text style={[type.small, { color: colors.faint }]}>Tap + to add a shot. Hold + to add several at once.</Text>
+            ) : (
+              <Text style={[type.small, { color: colors.faint }]}>Hold a shot to give it a title (up to {MAX_TITLE} characters).</Text>
+            )}
           </View>
         }
         renderItem={({ item }) => {
@@ -131,12 +135,19 @@ export default function ShotListScreen() {
               }}
               onLongPress={() => setDialog({ kind: "shotMenu", shot: s })}
               delayLongPress={450}
-              style={[styles.tile, { width: tile, height: tile, backgroundColor: bg }, isSel && styles.tileSelected]}
+              style={[styles.tile, styles.shotTile, { width: tile, height: tile, backgroundColor: bg }, isSel && styles.tileSelected]}
               accessibilityRole="button"
-              accessibilityLabel={`Shot ${s.number}${s.status === "none" ? "" : `, ${s.status}`}`}
+              accessibilityLabel={`Shot ${s.number}${s.description ? `: ${s.description}` : ""}${s.status === "none" ? "" : `, ${s.status}`}`}
               accessibilityState={{ selected: isSel }}
             >
               <Text style={[styles.number, { color: fg }]}>{s.number}</Text>
+              <View style={styles.titleWrap}>
+                {s.description ? (
+                  <Text style={[styles.title, { color: fg }]} numberOfLines={4}>
+                    {s.description}
+                  </Text>
+                ) : null}
+              </View>
               {s.status !== "none" ? <Text style={[styles.status, { color: fg }]}>{s.status === "done" ? "DONE" : "ACTIVE"}</Text> : null}
             </Pressable>
           );
@@ -192,10 +203,12 @@ export default function ShotListScreen() {
       <ActionSheet
         visible={dialog?.kind === "shotMenu"}
         title={dialog?.kind === "shotMenu" ? `Shot ${dialog.shot.number}` : undefined}
+        message={dialog?.kind === "shotMenu" && dialog.shot.description ? dialog.shot.description : undefined}
         onClose={() => setDialog(null)}
         actions={
           dialog?.kind === "shotMenu"
             ? [
+                { label: dialog.shot.description ? "Edit title" : "Add title", onPress: () => setDialog({ kind: "title", shot: dialog.shot }) },
                 {
                   label: "Delete shot",
                   destructive: true,
@@ -208,6 +221,18 @@ export default function ShotListScreen() {
               ]
             : []
         }
+      />
+      <PromptModal
+        visible={dialog?.kind === "title"}
+        title={dialog?.kind === "title" ? `Shot ${dialog.shot.number} title` : ""}
+        placeholder="e.g. Wide – coach enters"
+        initialValue={dialog?.kind === "title" ? dialog.shot.description : ""}
+        maxLength={MAX_TITLE}
+        onCancel={() => setDialog(null)}
+        onSave={(v) => {
+          if (dialog?.kind === "title") setTitle(dialog.shot.id, v);
+          setDialog(null);
+        }}
       />
       <ActionSheet
         visible={dialog?.kind === "confirmStop"}
@@ -246,8 +271,11 @@ const styles = StyleSheet.create({
   tileSelected: { borderWidth: 4, borderColor: colors.text },
   addTile: { borderStyle: "dashed", borderWidth: 1.5, backgroundColor: "transparent", gap: 2 },
   addPlus: { fontSize: 30, lineHeight: 32, color: colors.text },
-  number: { fontFamily: fonts.bold, fontSize: 34, fontVariant: ["tabular-nums"] },
-  status: { fontFamily: fonts.bold, fontSize: 11, letterSpacing: 1.2, marginTop: 2 },
+  shotTile: { alignItems: "stretch", justifyContent: "flex-start", padding: space.sm },
+  number: { fontFamily: fonts.bold, fontSize: 14, fontVariant: ["tabular-nums"], alignSelf: "flex-start" },
+  titleWrap: { flex: 1, justifyContent: "center" },
+  title: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 16, textAlign: "center" },
+  status: { fontFamily: fonts.bold, fontSize: 10, letterSpacing: 1.2, textAlign: "center" },
   bar: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,

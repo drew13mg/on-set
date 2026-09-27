@@ -56,6 +56,13 @@ export function defaultListName(existing: Pick<ShotListRow, "name">[]): string {
   return `Shot list ${n}`;
 }
 
+export const MAX_TITLE = 30;
+
+/** Tidy a shot title: single spaces, trimmed, at most 30 characters. */
+export function cleanTitle(raw: string): string {
+  return raw.replace(/\s+/g, " ").trim().slice(0, MAX_TITLE).trim();
+}
+
 /** Action buttons at the bottom of a list. */
 export const ACTION_STATUS = { done: "done", active: "active", uncheck: "none" } as const satisfies Record<string, ShotStatus>;
 

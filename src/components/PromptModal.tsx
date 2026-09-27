@@ -21,6 +21,8 @@ type Props = {
   saveLabel?: string;
   /** Several lines of text (notes). */
   multiline?: boolean;
+  /** Character limit, with a live counter. */
+  maxLength?: number;
   onSave: (value: string) => void;
   onCancel: () => void;
 };
@@ -34,6 +36,7 @@ export function PromptModal({
   initialValue = "",
   saveLabel = "Save",
   multiline = false,
+  maxLength,
   onSave,
   onCancel,
 }: Props) {
@@ -60,8 +63,14 @@ export function PromptModal({
             returnKeyType={multiline ? "default" : "done"}
             onSubmitEditing={multiline ? undefined : () => onSave(value)}
             style={[styles.input, multiline && styles.multiline]}
+            maxLength={maxLength}
             accessibilityLabel={title}
           />
+          {maxLength ? (
+            <Text style={[type.small, styles.counter, value.length >= maxLength && { color: colors.markOut }]}>
+              {value.length} / {maxLength}
+            </Text>
+          ) : null}
           <View style={styles.actions}>
             <Pressable onPress={onCancel} style={({ pressed }) => [styles.btn, styles.ghost, pressed && styles.pressed]}>
               <Text style={[type.button, { color: colors.muted }]}>Cancel</Text>
@@ -101,6 +110,7 @@ const styles = StyleSheet.create({
     paddingVertical: space.md,
   },
   multiline: { minHeight: 140, maxHeight: 280, textAlignVertical: "top" },
+  counter: { alignSelf: "flex-end", marginTop: -space.sm, fontVariant: ["tabular-nums"] },
   actions: { flexDirection: "row", gap: space.md },
   btn: { flex: 1, alignItems: "center", paddingVertical: space.md, borderRadius: radius.md },
   ghost: { backgroundColor: colors.surfaceRaised },

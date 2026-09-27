@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useSync, useSyncVersion } from "./sync/SyncProvider";
 import type { ShotListRow, ShotRow, ShotStatus } from "./sync/model";
 import { uuid } from "./id";
-import { activeList, defaultListName, liveShots, nextShotNumber, shotsToAdd } from "./shots";
+import { activeList, cleanTitle, defaultListName, liveShots, nextShotNumber, shotsToAdd } from "./shots";
 
 /** A project's shot lists (shared with the project team). */
 export function useShotLists(projectId: string) {
@@ -109,6 +109,15 @@ export function useShotList(projectId: string, listId: string) {
     [engine],
   );
 
+  const setTitle = useCallback(
+    (shotId: string, title: string) => {
+      const s = engine.get("shots", shotId);
+      const clean = cleanTitle(title);
+      if (s && s.description !== clean) engine.patch("shots", shotId, { description: clean });
+    },
+    [engine],
+  );
+
   const removeShot = useCallback((shot: ShotRow) => engine.remove("shots", shot.id), [engine]);
 
   /** Make this the project's active shot list (any other started list is stopped). */
@@ -124,7 +133,7 @@ export function useShotList(projectId: string, listId: string) {
 
   const stop = useCallback(() => engine.patch("shotLists", listId, { startedAt: null }), [engine, listId]);
 
-  return { list, shots, addShots, setStatus, removeShot, start, stop };
+  return { list, shots, addShots, setStatus, setTitle, removeShot, start, stop };
 }
 
 /** The project's active (started) shot list and its shots. For tools that follow the shoot live. */

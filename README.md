@@ -75,7 +75,7 @@ The places you're considering for the project.
 Numbered shot tiles to track the shoot.
 
 - **Lists:** **New shot list**, or tap a list to open and edit it. **Press and hold** a list to **Edit name**, **Duplicate** (copies every shot, all unchecked; you're asked to name the copy straight away) or **Delete**.
-- **Shots:** square numbered tiles, **3 across, up to 40 rows (120 shots)**. Tap **+** to add a shot; **hold +** to add several at once. Numbers stay with their shot (deleting one leaves a gap, like paperwork). Hold a tile to delete that shot.
+- **Shots:** square tiles, **3 across, up to 40 rows (120 shots)**. The shot number sits small in the top-left corner; each shot can have a **title of up to 30 characters** shown in the middle of the tile. Tap **+** to add a shot; **hold +** to add several at once. **Hold a tile** to add/edit its title or delete the shot. Numbers stay with their shot (deleting one leaves a gap, like paperwork).
 - **Marking:** tap a tile to select it, then use the buttons at the bottom: **Done** turns it red, **Active** turns it green, **Uncheck** puts it back.
 - **Start** (top of a list) makes it the project's **active shot list** — only one at a time; starting another stops the previous. Tap the green "Active" bar to stop. The active list is available to other tools via `useActiveShotList(projectId)` in `src/lib/shots-store.tsx`.
 - Shared live with everyone on the project.
