@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import { ClipsProvider } from "@/lib/clips-store";
+import { ProjectsProvider } from "@/lib/projects-store";
 import { fontSources, fonts } from "@/lib/fonts";
 import { colors } from "@/lib/theme";
 
@@ -20,21 +21,25 @@ export default function RootLayout() {
 
   return (
     <ClipsProvider>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.text,
-          headerTitleStyle: { fontFamily: fonts.bold, fontSize: 17 },
-          headerShadowVisible: false,
-          contentStyle: { backgroundColor: colors.bg },
-        }}
-      >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="transcribe" options={{ title: "Transcribe" }} />
-        <Stack.Screen name="clips" options={{ title: "Clips" }} />
-        <Stack.Screen name="sun" options={{ title: "Sun Tracker" }} />
-      </Stack>
+      <ProjectsProvider>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: colors.bg },
+            headerTintColor: colors.text,
+            headerTitleStyle: { fontFamily: fonts.bold, fontSize: 17 },
+            headerShadowVisible: false,
+            headerBackButtonDisplayMode: "minimal",
+            contentStyle: { backgroundColor: colors.bg },
+          }}
+        >
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="project/[id]/index" options={{ title: "" }} />
+          <Stack.Screen name="project/[id]/transcribe" options={{ title: "Transcribe" }} />
+          <Stack.Screen name="project/[id]/clips" options={{ title: "Clips" }} />
+          <Stack.Screen name="project/[id]/sun" options={{ title: "Sun Tracker" }} />
+        </Stack>
+      </ProjectsProvider>
     </ClipsProvider>
   );
 }

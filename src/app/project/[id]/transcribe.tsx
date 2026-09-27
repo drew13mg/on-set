@@ -3,7 +3,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { NameClipModal } from "@/components/NameClipModal";
-import { useClips } from "@/lib/clips-store";
+import { useProjectClips } from "@/lib/clips-store";
+import { useCurrentProject } from "@/lib/projects-store";
 import { createClip, defaultClipName, formatDuration, formatTimeOfDay } from "@/lib/clips";
 import { useNow } from "@/lib/useNow";
 import { useTranscriber } from "@/lib/useTranscriber";
@@ -14,7 +15,8 @@ const tap = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
 
 export default function Transcribe() {
   const now = useNow();
-  const { clips, addClip } = useClips();
+  const { id: projectId } = useCurrentProject();
+  const { clips, addClip } = useProjectClips(projectId);
   const t = useTranscriber();
 
   const [inAt, setInAt] = useState<number | null>(null);
@@ -45,7 +47,7 @@ export default function Transcribe() {
 
   const saveClip = (name: string) => {
     if (inAt === null || outAt === null) return;
-    addClip(createClip({ name, inAt, outAt, lines: t.lines, existing: clips }));
+    addClip(createClip({ projectId, name, inAt, outAt, lines: t.lines, existing: clips }));
     resetMarks();
   };
 

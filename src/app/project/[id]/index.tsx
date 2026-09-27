@@ -1,0 +1,118 @@
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { router, Stack } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { PromptModal } from "@/components/PromptModal";
+import { useProjectClips } from "@/lib/clips-store";
+import { useCurrentProject, useProjects } from "@/lib/projects-store";
+import { useNow } from "@/lib/useNow";
+import { formatTimeOfDay } from "@/lib/clips";
+import { colors, radius, space, type } from "@/lib/theme";
+
+type ToolRoute = "/project/[id]/transcribe" | "/project/[id]/clips" | "/project/[id]/sun";
+type Tool = { title: string; description: string; route: ToolRoute; meta?: string };
+
+/** A project's tools. New ON SET tools get added to the list below. */
+export default function ProjectHome() {
+  const { id, project } = useCurrentProject();
+  const { renameProject } = useProjects();
+  const { clips } = useProjectClips(id);
+  const now = useNow();
+  const [renaming, setRenaming] = useState(false);
+
+  const tools: Tool[] = [
+    {
+      title: "Transcribe",
+      description: "Live speech-to-text with Mark In / Mark Out at time of day.",
+      route: "/project/[id]/transcribe",
+    },
+    {
+      title: "Clips",
+      description: "Named IN/OUT marks with the dialogue heard between them.",
+      route: "/project/[id]/clips",
+      meta: clips.length === 1 ? "1 saved" : `${clips.length} saved`,
+    },
+    {
+      title: "Sun Tracker",
+      description: "Where the sun will be at any time and date, with live weather on location.",
+      route: "/project/[id]/sun",
+    },
+  ];
+
+  if (!project) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <Text style={[type.body, { color: colors.muted, marginTop: space.xl }]}>This project no longer exists.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safe} edges={["bottom"]}>
+      <Stack.Screen
+        options={{
+          title: "",
+          headerRight: () => (
+            <Text style={[type.time, { color: colors.muted, paddingHorizontal: space.sm }]}>{formatTimeOfDay(now)}</Text>
+          ),
+        }}
+      />
+      <ScrollView contentContainerStyle={styles.content}>
+        <Pressable onPress={() => setRenaming(true)} style={styles.titleRow} accessibilityHint="Rename project">
+          <Text style={[type.title, styles.title]} numberOfLines={2}>
+            {project.name}
+          </Text>
+          <Text style={[type.label, { color: colors.text }]}>Rename</Text>
+        </Pressable>
+
+        <Text style={[type.label, styles.section]}>Tools</Text>
+        <View style={styles.list}>
+          {tools.map((t) => (
+            <Pressable
+              key={t.title}
+              accessibilityRole="button"
+              onPress={() => router.push({ pathname: t.route, params: { id } })}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            >
+              <View style={styles.cardTop}>
+                <Text style={type.heading}>{t.title}</Text>
+                {t.meta ? <Text style={type.small}>{t.meta}</Text> : null}
+              </View>
+              <Text style={[type.small, styles.cardBody]}>{t.description}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
+
+      <PromptModal
+        visible={renaming}
+        title="Rename project"
+        initialValue={project.name}
+        onCancel={() => setRenaming(false)}
+        onSave={(name) => {
+          renameProject(id, name);
+          setRenaming(false);
+        }}
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: space.lg },
+  content: { paddingBottom: space.xxl },
+  titleRow: { flexDirection: "row", alignItems: "flex-start", gap: space.md, paddingTop: space.sm, paddingBottom: space.xl },
+  title: { flex: 1, letterSpacing: 0.5 },
+  section: { marginBottom: space.md },
+  list: { gap: space.md },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: space.lg,
+  },
+  cardPressed: { backgroundColor: colors.surfaceRaised },
+  cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
+  cardBody: { marginTop: space.xs, lineHeight: 19 },
+});

@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Clip } from "./clips";
 
-const STORAGE_KEY = "onset.clips.v1";
+const STORAGE_KEY = "onset.clips.v2";
 
 type ClipsContextValue = {
   clips: Clip[];
@@ -10,6 +10,7 @@ type ClipsContextValue = {
   addClip: (clip: Clip) => void;
   renameClip: (id: string, name: string) => void;
   removeClip: (id: string) => void;
+  removeProjectClips: (projectId: string) => void;
 };
 
 const ClipsContext = createContext<ClipsContextValue | null>(null);
@@ -42,10 +43,14 @@ export function ClipsProvider({ children }: { children: ReactNode }) {
     [],
   );
   const removeClip = useCallback((id: string) => setClips((cs) => cs.filter((c) => c.id !== id)), []);
+  const removeProjectClips = useCallback(
+    (projectId: string) => setClips((cs) => cs.filter((c) => c.projectId !== projectId)),
+    [],
+  );
 
   const value = useMemo(
-    () => ({ clips, loaded, addClip, renameClip, removeClip }),
-    [clips, loaded, addClip, renameClip, removeClip],
+    () => ({ clips, loaded, addClip, renameClip, removeClip, removeProjectClips }),
+    [clips, loaded, addClip, renameClip, removeClip, removeProjectClips],
   );
   return <ClipsContext.Provider value={value}>{children}</ClipsContext.Provider>;
 }
@@ -54,4 +59,11 @@ export function useClips(): ClipsContextValue {
   const ctx = useContext(ClipsContext);
   if (!ctx) throw new Error("useClips must be used inside <ClipsProvider>");
   return ctx;
+}
+
+/** Clips for one project only. */
+export function useProjectClips(projectId: string) {
+  const store = useClips();
+  const clips = useMemo(() => store.clips.filter((c) => c.projectId === projectId), [store.clips, projectId]);
+  return { ...store, clips };
 }

@@ -1,25 +1,24 @@
 import { useState } from "react";
-import { Alert, FlatList, Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ActionSheet } from "@/components/ActionSheet";
 import { NameClipModal } from "@/components/NameClipModal";
-import { useClips } from "@/lib/clips-store";
+import { useProjectClips } from "@/lib/clips-store";
+import { useCurrentProject } from "@/lib/projects-store";
 import { clipsToText, formatDuration, formatTimeOfDay, type Clip } from "@/lib/clips";
 import { colors, radius, space, type } from "@/lib/theme";
 
 export default function Clips() {
-  const { clips, renameClip, removeClip } = useClips();
+  const { id: projectId, project } = useCurrentProject();
+  const { clips, renameClip, removeClip } = useProjectClips(projectId);
   const [editing, setEditing] = useState<Clip | null>(null);
+  const [menuFor, setMenuFor] = useState<Clip | null>(null);
+  const [deleting, setDeleting] = useState<Clip | null>(null);
 
   const shareAll = () => {
-    if (clips.length) Share.share({ message: clipsToText(clips) }).catch(() => {});
+    if (clips.length) Share.share({ message: `${project?.name ?? "ON SET"}\n\n${clipsToText(clips)}` }).catch(() => {});
   };
-
-  const confirmDelete = (clip: Clip) =>
-    Alert.alert(`Delete "${clip.name}"?`, "This can't be undone.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => removeClip(clip.id) },
-    ]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
@@ -45,7 +44,8 @@ export default function Clips() {
         renderItem={({ item }) => (
           <Pressable
             onPress={() => setEditing(item)}
-            onLongPress={() => confirmDelete(item)}
+            onLongPress={() => setMenuFor(item)}
+            delayLongPress={350}
             style={({ pressed }) => [styles.card, pressed && { backgroundColor: colors.surfaceRaised }]}
           >
             <View style={styles.cardTop}>
@@ -69,7 +69,7 @@ export default function Clips() {
           </Pressable>
         )}
       />
-      {clips.length ? <Text style={[type.small, styles.hint]}>Tap to rename · Hold to delete</Text> : null}
+      {clips.length ? <Text style={[type.small, styles.hint]}>Tap to rename · Hold for more options</Text> : null}
 
       <NameClipModal
         visible={editing !== null}
@@ -84,6 +84,32 @@ export default function Clips() {
           setEditing(null);
         }}
         onCancel={() => setEditing(null)}
+      />
+
+      <ActionSheet
+        visible={menuFor !== null}
+        title={menuFor?.name}
+        onClose={() => setMenuFor(null)}
+        actions={
+          menuFor
+            ? [
+                { label: "Rename", onPress: () => { setEditing(menuFor); setMenuFor(null); } },
+                { label: "Delete", destructive: true, onPress: () => { setDeleting(menuFor); setMenuFor(null); } },
+              ]
+            : []
+        }
+      />
+
+      <ActionSheet
+        visible={deleting !== null}
+        title={deleting ? `Delete "${deleting.name}"?` : undefined}
+        message="This can't be undone."
+        onClose={() => setDeleting(null)}
+        actions={
+          deleting
+            ? [{ label: "Delete clip", destructive: true, onPress: () => { removeClip(deleting.id); setDeleting(null); } }]
+            : []
+        }
       />
     </SafeAreaView>
   );

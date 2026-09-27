@@ -12,6 +12,8 @@ export type TranscriptLine = {
 /** A named IN/OUT pair captured while transcribing. */
 export type Clip = {
   id: string;
+  /** Project this clip belongs to. */
+  projectId: string;
   name: string;
   /** Epoch ms of the Mark In press (time of day). */
   inAt: number;
@@ -73,16 +75,19 @@ export function makeId(): string {
 
 /** Build a clip, falling back to the default name if the user left it blank. */
 export function createClip(args: {
+  projectId: string;
   name: string;
   inAt: number;
   outAt: number;
   lines: TranscriptLine[];
+  /** Clips already in the same project (for the default name). */
   existing: Clip[];
   now?: number;
 }): Clip {
   const name = args.name.trim() || defaultClipName(args.existing);
   return {
     id: makeId(),
+    projectId: args.projectId,
     name,
     inAt: args.inAt,
     outAt: args.outAt,

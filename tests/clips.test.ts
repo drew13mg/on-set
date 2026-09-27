@@ -45,16 +45,16 @@ test("defaultClipName counts up and skips used names", () => {
 });
 
 test("createClip trims name and falls back to default", () => {
-  const c = createClip({ name: "  Scene 4 Take 2 ", inAt: at(10, 0, 5), outAt: at(10, 0, 30), lines, existing: [] });
+  const c = createClip({ projectId: "p1", name: "  Scene 4 Take 2 ", inAt: at(10, 0, 5), outAt: at(10, 0, 30), lines, existing: [] });
   assert.equal(c.name, "Scene 4 Take 2");
   assert.equal(c.transcript, "rolling and action cut");
-  const blank = createClip({ name: "   ", inAt: 1, outAt: 2, lines: [], existing: [c] });
+  const blank = createClip({ projectId: "p1", name: "   ", inAt: 1, outAt: 2, lines: [], existing: [c] });
   assert.equal(blank.name, "Clip 2");
 });
 
 test("clipsToText sorts by IN time", () => {
-  const a = createClip({ name: "B", inAt: at(11, 0, 0), outAt: at(11, 0, 10), lines: [], existing: [] });
-  const b = createClip({ name: "A", inAt: at(10, 0, 5), outAt: at(10, 0, 30), lines, existing: [] });
+  const a = createClip({ projectId: "p1", name: "B", inAt: at(11, 0, 0), outAt: at(11, 0, 10), lines: [], existing: [] });
+  const b = createClip({ projectId: "p1", name: "A", inAt: at(10, 0, 5), outAt: at(10, 0, 30), lines, existing: [] });
   const text = clipsToText([a, b]);
   assert.ok(text.startsWith("A  IN 10:00:05  OUT 10:00:30  (0:25)"));
   assert.ok(text.includes('"rolling and action cut"'));

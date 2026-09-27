@@ -2,6 +2,9 @@
 
 A toolkit for creatives working on large productions. iOS and Android, built with Expo (SDK 57) and Expo Router.
 
+## Projects
+The first screen. Tap **New project** to start one (it opens straight into its tools), or tap a project in the list to open it. The list shows the most recently used first. **Press and hold** a project to rename or delete it (deleting also removes its clips and saved location). Everything in the tools below belongs to the open project.
+
 ## Tools
 
 ### Transcribe
@@ -15,7 +18,7 @@ Live speech-to-text from the phone's microphone.
 - On iOS, speech is processed on the device (no network needed).
 
 ### Clips
-All named clips, saved on the device. Tap to rename, hold to delete, **Share** to send a text log (sorted by IN time) to an editor or script supervisor.
+The project's named clips, saved on the device. Tap to rename, hold for rename / delete, **Share** to send a text log (sorted by IN time) to an editor or script supervisor.
 
 ### Sun Tracker
 Where the sun will be at any time and date, anywhere, plus live weather there.
@@ -35,12 +38,13 @@ Weather and place search use [Open-Meteo](https://open-meteo.com) (free, no API 
 ## Project layout
 
 ```
-src/app/            screens (Expo Router: every file is a route)
-  _layout.tsx       app shell, fonts, header style
-  index.tsx         home: list of ON SET tools (add new tools here)
-  transcribe.tsx    live transcript + Mark In / Mark Out
-  clips.tsx         saved clips
-  sun.tsx           sun tracker + weather
+src/app/                    screens (Expo Router: every file is a route)
+  _layout.tsx               app shell, fonts, header style
+  index.tsx                 projects (first screen)
+  project/[id]/index.tsx    a project's tools (add new tools here)
+  project/[id]/transcribe.tsx
+  project/[id]/clips.tsx
+  project/[id]/sun.tsx
 src/components/     shared UI (clip naming, sun compass, time slider, place picker, weather cards)
 src/lib/            logic, theme, fonts, hooks (sun.ts, tz.ts, weather.ts are pure + unit tested)
 tests/              unit tests (node --test)

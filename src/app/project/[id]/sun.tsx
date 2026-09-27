@@ -39,15 +39,17 @@ import {
   type DateKey,
 } from "@/lib/tz";
 import { useNow } from "@/lib/useNow";
+import { projectKey, useCurrentProject } from "@/lib/projects-store";
 import { useWeather } from "@/lib/useWeather";
 import { hasForecastFor, hourFor, FORECAST_DAYS } from "@/lib/weather";
 import { colors, phaseColors, radius, space, type } from "@/lib/theme";
 
-const PLACE_KEY = "onset.sun.place.v1";
 
 export default function SunTracker() {
   const { width } = useWindowDimensions();
   const now = useNow(15_000);
+  const { id: projectId } = useCurrentProject();
+  const placeKey = projectKey(projectId, "sun.place");
 
   const [place, setPlace] = useState<Place | null>(null);
   const [restored, setRestored] = useState(false);
@@ -57,21 +59,21 @@ export default function SunTracker() {
 
   // Restore the last location; on first use, ask for one.
   useEffect(() => {
-    AsyncStorage.getItem(PLACE_KEY)
+    AsyncStorage.getItem(placeKey)
       .then((raw) => {
         if (raw) setPlace(JSON.parse(raw) as Place);
         else setPickerOpen(true);
       })
       .catch(() => setPickerOpen(true))
       .finally(() => setRestored(true));
-  }, []);
+  }, [placeKey]);
 
   const choosePlace = (p: Place) => {
     setPlace(p);
     setPickedDate(null);
     setPickedMinute(null);
     setPickerOpen(false);
-    AsyncStorage.setItem(PLACE_KEY, JSON.stringify(p)).catch(() => {});
+    AsyncStorage.setItem(placeKey, JSON.stringify(p)).catch(() => {});
   };
 
   const { weather, loading, error, refresh } = useWeather(place?.lat ?? null, place?.lon ?? null);
