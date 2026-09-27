@@ -1,70 +1,36 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo } from "react";
 import type { Clip } from "./clips";
+import { useSync, useSyncVersion } from "./sync/SyncProvider";
 
-const STORAGE_KEY = "onset.clips.v2";
+/** All clips on this device (every project), kept in sync with the team. */
+export function useClips() {
+  const { engine, ready } = useSync();
+  const version = useSyncVersion();
 
-type ClipsContextValue = {
-  clips: Clip[];
-  loaded: boolean;
-  addClip: (clip: Clip) => void;
-  renameClip: (id: string, name: string) => void;
-  removeClip: (id: string) => void;
-  removeProjectClips: (projectId: string) => void;
-  removeTranscriptionClips: (transcriptionId: string) => void;
-};
+  const clips = useMemo(
+    () => engine.all("clips") as Clip[],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [engine, version],
+  );
 
-const ClipsContext = createContext<ClipsContextValue | null>(null);
-
-/** Keeps named clips in memory and saves them on the device so they survive restarts. */
-export function ClipsProvider({ children }: { children: ReactNode }) {
-  const [clips, setClips] = useState<Clip[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => {
-        if (raw) setClips(JSON.parse(raw) as Clip[]);
-      })
-      .catch((e) => console.warn("Could not load clips", e))
-      .finally(() => setLoaded(true));
-  }, []);
-
-  useEffect(() => {
-    if (!loaded) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(clips)).catch((e) =>
-      console.warn("Could not save clips", e),
-    );
-  }, [clips, loaded]);
-
-  const addClip = useCallback((clip: Clip) => setClips((cs) => [clip, ...cs]), []);
+  const addClip = useCallback((clip: Clip) => void engine.put("clips", { ...clip, transcript: clip.transcript ?? "" }), [engine]);
   const renameClip = useCallback(
-    (id: string, name: string) =>
-      setClips((cs) => cs.map((c) => (c.id === id && name.trim() ? { ...c, name: name.trim() } : c))),
-    [],
+    (id: string, name: string) => {
+      if (name.trim()) engine.patch("clips", id, { name: name.trim() });
+    },
+    [engine],
   );
-  const removeClip = useCallback((id: string) => setClips((cs) => cs.filter((c) => c.id !== id)), []);
+  const removeClip = useCallback((id: string) => engine.remove("clips", id), [engine]);
   const removeProjectClips = useCallback(
-    (projectId: string) => setClips((cs) => cs.filter((c) => c.projectId !== projectId)),
-    [],
+    (projectId: string) => engine.batch(() => engine.all("clips").forEach((c) => c.projectId === projectId && engine.remove("clips", c.id))),
+    [engine],
   );
-
   const removeTranscriptionClips = useCallback(
-    (transcriptionId: string) => setClips((cs) => cs.filter((c) => c.transcriptionId !== transcriptionId)),
-    [],
+    (tid: string) => engine.batch(() => engine.all("clips").forEach((c) => c.transcriptionId === tid && engine.remove("clips", c.id))),
+    [engine],
   );
 
-  const value = useMemo(
-    () => ({ clips, loaded, addClip, renameClip, removeClip, removeProjectClips, removeTranscriptionClips }),
-    [clips, loaded, addClip, renameClip, removeClip, removeProjectClips, removeTranscriptionClips],
-  );
-  return <ClipsContext.Provider value={value}>{children}</ClipsContext.Provider>;
-}
-
-export function useClips(): ClipsContextValue {
-  const ctx = useContext(ClipsContext);
-  if (!ctx) throw new Error("useClips must be used inside <ClipsProvider>");
-  return ctx;
+  return { clips, loaded: ready, addClip, renameClip, removeClip, removeProjectClips, removeTranscriptionClips };
 }
 
 /** Clips for one project only. */

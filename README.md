@@ -3,7 +3,22 @@
 A toolkit for creatives working on large productions. iOS and Android, built with Expo (SDK 57) and Expo Router.
 
 ## Projects
-The first screen. Tap **New project** to start one (it opens straight into its tools), or tap a project in the list to open it. The list shows the most recently used first. **Press and hold** a project to rename or delete it (deleting also removes its clips and saved location). Everything in the tools below belongs to the open project.
+The first screen. The account button (top right) signs you in with Apple or Google; the dot under the title shows sync status. Tap **New project** to start one (it opens straight into its tools), or tap a project in the list to open it. The list shows the most recently used first. **Press and hold** a project to rename or delete it (deleting also removes its clips and saved location). Everything in the tools below belongs to the open project.
+
+**Join a project with a code** (under New project) joins a project someone shared with you by invite code.
+
+## Sharing
+Sign in to share. Everyone on a project sees every change (transcripts, clips, equipment checks, sun location, project name) as it happens.
+
+- **Project settings** — the gear in the top-right corner of every project screen. Sharing lives here, so you can add more people any time. (More settings can be added here later.) Also reachable by pressing and holding a project → **Share**.
+- **Add people** by email (paste several at once).
+- **User groups** — saved lists of people (e.g. "Camera dept") shown as buttons: tap to share the project with the whole group, tap again to unshare. **Press and hold a group** to edit its name and members. Groups stay linked: people you add to a group get access to every project shared with it, and people you remove lose it. Manage all groups from Account → User groups.
+- **Invite code** — an 8-character code anyone can use via "Join a project with a code". Useful when someone signs in with Apple's Hide My Email.
+- **People with access** — who can open the project and how (owner, added directly, or via a group). The owner can remove people added directly.
+- Anyone on a project can edit and share it further. Only the owner can delete it for everyone; others can **Leave**.
+- **Offline**: everything works without signal. Changes are saved on the phone and upload when you're back online; if two people edit the same thing, the most recent change wins.
+- **"My equipment"** (saved gear) follows you across your own devices but isn't shared.
+- **Account → Delete account** permanently removes your account and the projects you own (required by the App Store).
 
 ## Tools
 
@@ -58,6 +73,9 @@ src/app/                    screens (Expo Router: every file is a route)
   project/[id]/clips.tsx
   project/[id]/sun.tsx
   project/[id]/equipment.tsx
+  project/[id]/settings.tsx   project settings (gear, top right): sharing, rename, delete/leave
+  account.tsx               sign in / account
+  groups.tsx                saved user groups
 src/components/     shared UI (clip naming, sun compass, time slider, place picker, weather cards)
 src/lib/            logic, theme, fonts, hooks (sun.ts, tz.ts, weather.ts are pure + unit tested)
 tests/              unit tests (node --test)
@@ -67,6 +85,32 @@ tests/              unit tests (node --test)
 Dark slate grey (`#1C2127`) with DIN-style type. Colors, spacing and type styles live in `src/lib/theme.ts`.
 
 **Font:** the app is set up for **DIN Pro**, which is a licensed font and isn't in the repo. Until it's added, Barlow (free, DIN-inspired) stands in. To switch, add your DIN Pro files to `assets/fonts/` and follow the steps at the top of `src/lib/fonts.ts`.
+
+## Backend
+
+Supabase project **on-set** (`upjtapmgidpmtudjhtpv`, US East). Schema, access rules and functions are in `supabase/migrations/`. Every table has row-level security: people only ever see projects they own, were added to, or are in a linked group for. The app's publishable key is in `src/lib/supabase.ts` (safe to ship; override with `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
+
+App side: `src/lib/sync/` is the offline-first sync engine (device copy → upload → download → live updates via Supabase Realtime), tested in `tests/sync.test.ts`.
+
+## Sign-in setup (needed before anyone can sign in)
+
+Sign-in buttons are built in, but Apple and Google each need a one-time setup in their developer consoles, then the keys go into Supabase.
+
+**1. Supabase redirect URL**
+Supabase dashboard → Authentication → URL Configuration → *Redirect URLs* → add `onset://auth-callback`.
+
+**2. Google**
+1. Google Cloud Console → APIs & Services → Credentials → *Create OAuth client ID* → type **Web application**.
+2. Authorized redirect URI: `https://upjtapmgidpmtudjhtpv.supabase.co/auth/v1/callback`
+3. Copy the Client ID and Client secret into Supabase → Authentication → Sign In / Providers → **Google** → enable.
+4. OAuth consent screen: add your app name, support email and the `email` / `profile` scopes; publish it when you're ready for users outside your test list.
+
+**3. Apple** (needs the paid Apple Developer Program)
+1. Certificates, Identifiers & Profiles → Identifiers → App ID `com.drew13mg.onset` → enable **Sign in with Apple**.
+2. For iPhone (native sign-in): in Supabase → Providers → **Apple** → enable, and add `com.drew13mg.onset` to *Client IDs*.
+3. For Android (browser sign-in): create a **Services ID** (e.g. `com.drew13mg.onset.signin`), enable Sign in with Apple on it, set the return URL to `https://upjtapmgidpmtudjhtpv.supabase.co/auth/v1/callback`; create a **Key** with Sign in with Apple; in Supabase's Apple provider add the Services ID to Client IDs and generate the secret from the key (Team ID, Key ID, .p8 file). Apple requires regenerating this secret every 6 months.
+
+Until a provider is set up, tapping its button shows "This sign-in option isn't switched on yet". Everything else in the app works without signing in.
 
 ## Running it
 

@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { ActionSheet } from "@/components/ActionSheet";
+import { ProjectHeaderRight } from "@/components/SettingsButton";
 import { PromptModal } from "@/components/PromptModal";
 import { useCurrentProject } from "@/lib/projects-store";
 import { useEquipmentLibrary, useProjectEquipment } from "@/lib/equipment-store";
@@ -81,12 +82,15 @@ export default function Equipment() {
       <Stack.Screen
         options={{
           title: mode === "check" ? "Equipment" : "Build list",
-          headerRight: () =>
-            mode === "check" ? (
-              <Pressable onPress={() => setEditing(true)} hitSlop={8} style={{ paddingHorizontal: space.sm }}>
-                <Text style={[type.label, { color: colors.text }]}>Edit list</Text>
-              </Pressable>
-            ) : null,
+          headerRight: () => (
+            <ProjectHeaderRight projectId={projectId}>
+              {mode === "check" ? (
+                <Pressable onPress={() => setEditing(true)} hitSlop={8}>
+                  <Text style={[type.label, { color: colors.text }]}>Edit list</Text>
+                </Pressable>
+              ) : null}
+            </ProjectHeaderRight>
+          ),
         }}
       />
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -8,7 +8,6 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DateRow } from "@/components/DateRow";
 import { PlacePicker } from "@/components/PlacePicker";
@@ -39,7 +38,8 @@ import {
   type DateKey,
 } from "@/lib/tz";
 import { useNow } from "@/lib/useNow";
-import { projectKey, useCurrentProject } from "@/lib/projects-store";
+import { useCurrentProject } from "@/lib/projects-store";
+import { useSync } from "@/lib/sync/SyncProvider";
 import { useWeather } from "@/lib/useWeather";
 import { hasForecastFor, hourFor, FORECAST_DAYS } from "@/lib/weather";
 import { colors, phaseColors, radius, space, type } from "@/lib/theme";
@@ -48,32 +48,30 @@ import { colors, phaseColors, radius, space, type } from "@/lib/theme";
 export default function SunTracker() {
   const { width } = useWindowDimensions();
   const now = useNow(15_000);
-  const { id: projectId } = useCurrentProject();
-  const placeKey = projectKey(projectId, "sun.place");
+  const { id: projectId, project } = useCurrentProject();
+  const { engine } = useSync();
 
-  const [place, setPlace] = useState<Place | null>(null);
-  const [restored, setRestored] = useState(false);
+  // The location is saved on the project, so everyone on it sees the same place.
+  const place: Place | null = project?.row.sunPlace ?? null;
+  const restored = !!project;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickedDate, setPickedDate] = useState<DateKey | null>(null); // null = today
   const [pickedMinute, setPickedMinute] = useState<number | null>(null); // null = follow "now" (today) / solar noon
 
-  // Restore the last location; on first use, ask for one.
+  // First visit to a project with no location yet: ask for one.
+  const asked = useRef(false);
   useEffect(() => {
-    AsyncStorage.getItem(placeKey)
-      .then((raw) => {
-        if (raw) setPlace(JSON.parse(raw) as Place);
-        else setPickerOpen(true);
-      })
-      .catch(() => setPickerOpen(true))
-      .finally(() => setRestored(true));
-  }, [placeKey]);
+    if (project && !project.row.sunPlace && !asked.current) {
+      asked.current = true;
+      setPickerOpen(true);
+    }
+  }, [project]);
 
   const choosePlace = (p: Place) => {
-    setPlace(p);
+    engine.patch("projects", projectId, { sunPlace: p });
     setPickedDate(null);
     setPickedMinute(null);
     setPickerOpen(false);
-    AsyncStorage.setItem(placeKey, JSON.stringify(p)).catch(() => {});
   };
 
   const { weather, loading, error, refresh } = useWeather(place?.lat ?? null, place?.lon ?? null);

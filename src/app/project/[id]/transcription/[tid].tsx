@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { NameClipModal } from "@/components/NameClipModal";
 import { PromptModal } from "@/components/PromptModal";
+import { ProjectHeaderRight } from "@/components/SettingsButton";
 import { useProjectClips } from "@/lib/clips-store";
 import { useCurrentProject } from "@/lib/projects-store";
 import { createClip, defaultClipName, formatDuration, formatTimeOfDay } from "@/lib/clips";
@@ -109,14 +110,14 @@ export default function Transcribe() {
         options={{
           title: transcription.name,
           headerRight: () => (
-            <View style={styles.headerBtns}>
+            <ProjectHeaderRight projectId={projectId}>
               <Pressable onPress={() => setRenaming(true)} hitSlop={8}>
                 <Text style={[type.label, { color: colors.muted }]}>Rename</Text>
               </Pressable>
               <Pressable onPress={email} hitSlop={8}>
                 <Text style={[type.label, { color: colors.text }]}>Email</Text>
               </Pressable>
-            </View>
+            </ProjectHeaderRight>
           ),
         }}
       />

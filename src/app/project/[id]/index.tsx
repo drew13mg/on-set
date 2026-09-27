@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router, Stack, useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PromptModal } from "@/components/PromptModal";
+import { ProjectHeaderRight } from "@/components/SettingsButton";
 import { useProjectClips } from "@/lib/clips-store";
 import { useProjectEquipment } from "@/lib/equipment-store";
 import { useProjectTranscriptions } from "@/lib/transcriptions-store";
@@ -67,7 +68,9 @@ export default function ProjectHome() {
         options={{
           title: "",
           headerRight: () => (
-            <Text style={[type.time, { color: colors.muted, paddingHorizontal: space.sm }]}>{formatTimeOfDay(now)}</Text>
+            <ProjectHeaderRight projectId={id}>
+              <Text style={[type.time, { color: colors.muted }]}>{formatTimeOfDay(now)}</Text>
+            </ProjectHeaderRight>
           ),
         }}
       />

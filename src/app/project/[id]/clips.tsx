@@ -3,6 +3,7 @@ import { Pressable, SectionList, Share, StyleSheet, Text, View } from "react-nat
 import { Stack, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActionSheet } from "@/components/ActionSheet";
+import { ProjectHeaderRight } from "@/components/SettingsButton";
 import { NameClipModal } from "@/components/NameClipModal";
 import { useProjectClips } from "@/lib/clips-store";
 import { useCurrentProject } from "@/lib/projects-store";
@@ -50,12 +51,15 @@ export default function Clips() {
       <Stack.Screen
         options={{
           title: onlyTid ? sections[0]?.title ?? "Clips" : "Clips",
-          headerRight: () =>
-            shown && !onlyTid ? (
-              <Pressable onPress={shareAll} hitSlop={8} style={{ paddingHorizontal: space.sm }}>
-                <Text style={[type.label, { color: colors.text }]}>Share</Text>
-              </Pressable>
-            ) : null,
+          headerRight: () => (
+            <ProjectHeaderRight projectId={projectId}>
+              {shown && !onlyTid ? (
+                <Pressable onPress={shareAll} hitSlop={8}>
+                  <Text style={[type.label, { color: colors.text }]}>Share</Text>
+                </Pressable>
+              ) : null}
+            </ProjectHeaderRight>
+          ),
         }}
       />
       <SectionList

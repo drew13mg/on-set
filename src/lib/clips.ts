@@ -1,3 +1,5 @@
+import { uuid } from "./id.ts";
+
 // Pure logic for ON SET's transcription marks. No React / native imports here,
 // so it can be unit tested with plain Node (see tests/clips.test.ts).
 
@@ -71,9 +73,8 @@ export function defaultClipName(existing: Pick<Clip, "name">[]): string {
   return `Clip ${n}`;
 }
 
-export function makeId(): string {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
+/** Ids are uuids so every record can be stored and shared on the server. */
+export const makeId = uuid;
 
 /** Build a clip, falling back to the default name if the user left it blank. */
 export function createClip(args: {

@@ -2,15 +2,8 @@ import { Platform } from "react-native";
 import * as Location from "expo-location";
 import { searchPlaceNames, type PlaceResult } from "./weather.ts";
 
-export type Place = {
-  name: string;
-  subtitle: string;
-  lat: number;
-  lon: number;
-  /** IANA zone if known up front (place search provides it; weather fills it in otherwise). */
-  timeZone?: string;
-  source: "gps" | "search";
-};
+import type { Place } from "./location-types.ts";
+export type { Place };
 
 function describe(a: Location.LocationGeocodedAddress | undefined, fallback: string) {
   if (!a) return { name: fallback, subtitle: "" };
