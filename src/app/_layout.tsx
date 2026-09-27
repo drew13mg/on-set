@@ -51,6 +51,8 @@ export default function RootLayout() {
             headerShadowVisible: false,
             headerBackButtonDisplayMode: "minimal",
             contentStyle: { backgroundColor: colors.bg },
+            // The app is portrait; the clapboard turns the phone sideways.
+            orientation: "portrait",
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -65,6 +67,7 @@ export default function RootLayout() {
           <Stack.Screen name="project/[id]/shot-lists" options={projectScreen("Shot List")} />
           <Stack.Screen name="project/[id]/shot-list/[sid]" options={projectScreen("Shot list")} />
           <Stack.Screen name="project/[id]/shot-tracker" options={projectScreen("Live Tracker")} />
+          <Stack.Screen name="project/[id]/slate" options={{ headerShown: false, orientation: "landscape", animation: "fade" }} />
           <Stack.Screen name="project/[id]/settings" options={{ title: "Project settings", presentation: "modal" }} />
           <Stack.Screen name="groups" options={{ title: "User groups" }} />
           <Stack.Screen name="account" options={{ title: "Account", presentation: "modal" }} />

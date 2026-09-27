@@ -47,7 +47,7 @@ export function PromptModal({
   }, [visible, initialValue]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel} statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel} statusBarTranslucent supportedOrientations={["portrait", "landscape"]}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.backdrop}>
         <View style={styles.sheet}>
           <Text style={type.heading}>{title}</Text>

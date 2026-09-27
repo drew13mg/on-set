@@ -9,13 +9,14 @@ import { useProjectEquipment } from "@/lib/equipment-store";
 import { useProjectTranscriptions } from "@/lib/transcriptions-store";
 import { useLocations } from "@/lib/scouting-store";
 import { useActiveShotList, useShotLists } from "@/lib/shots-store";
+import { useSlate } from "@/lib/slate-store";
 import { progress } from "@/lib/equipment";
 import { useCurrentProject, useProjects } from "@/lib/projects-store";
 import { useNow } from "@/lib/useNow";
 import { formatTimeOfDay } from "@/lib/clips";
 import { colors, radius, space, type } from "@/lib/theme";
 
-type ToolRoute = "/project/[id]/transcribe" | "/project/[id]/clips" | "/project/[id]/sun" | "/project/[id]/equipment" | "/project/[id]/locations" | "/project/[id]/shot-lists";
+type ToolRoute = "/project/[id]/transcribe" | "/project/[id]/clips" | "/project/[id]/sun" | "/project/[id]/equipment" | "/project/[id]/locations" | "/project/[id]/shot-lists" | "/project/[id]/slate";
 type Tool = { title: string; description: string; route: ToolRoute; meta?: string };
 
 /** A project's tools. New ON SET tools get added to the list below. */
@@ -27,6 +28,7 @@ export default function ProjectHome() {
   const { locations } = useLocations(id);
   const { lists: shotLists } = useShotLists(id);
   const { list: activeShots } = useActiveShotList(id);
+  const { row: slate } = useSlate(id);
   const { list: gear, reload: reloadGear } = useProjectEquipment(id);
   useFocusEffect(useCallback(() => reloadGear(), [reloadGear]));
   const gearProgress = progress(gear);
@@ -68,6 +70,12 @@ export default function ProjectHome() {
       description: "Numbered shot tiles; start a list, then mark shots active and done as you shoot.",
       route: "/project/[id]/shot-lists",
       meta: activeShots ? `Active: ${activeShots.name}` : shotLists.length ? `${shotLists.length} list${shotLists.length === 1 ? "" : "s"}` : undefined,
+    },
+    {
+      title: "Clapboard",
+      description: "A slate to hold up to camera: production, roll, scene, take, date, producer and director.",
+      route: "/project/[id]/slate",
+      meta: slate ? `Scene ${slate.scene || "—"} · Take ${slate.take || "—"}` : undefined,
     },
   ];
 

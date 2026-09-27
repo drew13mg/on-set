@@ -15,7 +15,7 @@ type Props = {
 /** Bottom menu of choices (used for press-and-hold options). Works the same on iOS, Android and web. */
 export function ActionSheet({ visible, title, message, actions, onClose }: Props) {
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent supportedOrientations={["portrait", "landscape"]}>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close menu">
         <SafeAreaView edges={["bottom"]} style={styles.wrap}>
           <Pressable style={styles.sheet} onPress={() => {}}>

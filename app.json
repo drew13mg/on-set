@@ -4,13 +4,14 @@
     "slug": "on-set",
     "scheme": "onset",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.drew13mg.onset",
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "requireFullScreen": true
     },
     "android": {
       "package": "com.drew13mg.onset",

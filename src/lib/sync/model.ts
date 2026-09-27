@@ -71,6 +71,18 @@ export type ShotRow = Synced & {
   createdAt: number;
 };
 
+/** The project's clapboard (one per project; its id is the project id). Empty date = today. */
+export type SlateRow = Synced & {
+  projectId: string;
+  title: string;
+  roll: string;
+  scene: string;
+  take: string;
+  date: string;
+  producer: string;
+  director: string;
+};
+
 export type Tables = {
   projects: ProjectRow;
   transcriptions: TranscriptionRow;
@@ -83,6 +95,7 @@ export type Tables = {
   locationPhotos: LocationPhotoRow;
   shotLists: ShotListRow;
   shots: ShotRow;
+  slates: SlateRow;
 };
 export type TableName = keyof Tables;
 
@@ -99,6 +112,7 @@ export const TABLE_ORDER: TableName[] = [
   "locationPhotos",
   "shotLists",
   "shots",
+  "slates",
 ];
 /** Tables whose rows belong to a project. */
 export const PROJECT_TABLES: TableName[] = [
@@ -111,6 +125,7 @@ export const PROJECT_TABLES: TableName[] = [
   "locationPhotos",
   "shotLists",
   "shots",
+  "slates",
 ];
 
 export const REMOTE_NAME: Record<TableName, string> = {
@@ -125,6 +140,7 @@ export const REMOTE_NAME: Record<TableName, string> = {
   locationPhotos: "location_photos",
   shotLists: "shot_lists",
   shots: "shots",
+  slates: "slates",
 };
 
 type RemoteRow = Record<string, unknown>;
@@ -343,6 +359,34 @@ export const MAP: { [T in TableName]: { toRemote: (r: Tables[T]) => RemoteRow; f
       timeMin: r.time_min == null ? null : num(r.time_min),
       description: String(r.description ?? ""),
       createdAt: num(r.created_ms),
+      updatedMs: num(r.updated_ms),
+      deleted: !!r.deleted,
+    }),
+  },
+  slates: {
+    toRemote: (r) => ({
+      id: r.id,
+      project_id: r.projectId,
+      title: r.title,
+      roll: r.roll,
+      scene: r.scene,
+      take: r.take,
+      slate_date: r.date,
+      producer: r.producer,
+      director: r.director,
+      updated_ms: r.updatedMs,
+      deleted: r.deleted,
+    }),
+    fromRemote: (r) => ({
+      id: String(r.id),
+      projectId: String(r.project_id),
+      title: String(r.title ?? ""),
+      roll: String(r.roll ?? ""),
+      scene: String(r.scene ?? ""),
+      take: String(r.take ?? ""),
+      date: String(r.slate_date ?? ""),
+      producer: String(r.producer ?? ""),
+      director: String(r.director ?? ""),
       updatedMs: num(r.updated_ms),
       deleted: !!r.deleted,
     }),

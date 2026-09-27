@@ -84,6 +84,15 @@ Numbered shot tiles to track the shoot.
 - **Notifications:** on a shared project, everyone else on it gets a push notification when a shot is marked **Done** or **Active** ("Done: Shot 3 · Cade lacing shoes CU (09:45) — Andrew"). Tapping it opens that shot list. You don't get notified for your own marks, and marks made offline that only upload more than 10 minutes later are skipped. The phone asks permission the first time you open Shot List on a shared project; switch it per project in **Project settings → Notifications → Shot updates**. Needs the one-time setup under *Push notifications setup* below.
 - Shared live with everyone on the project.
 
+### Clapboard
+A slate to hold up to camera. It opens sideways (the phone turns to landscape) with the screen kept awake.
+
+- **Board:** striped clapper sticks, a large **Production** title, then **Roll | Scene | Take**, then **Date | Producer | Director** along the bottom. Text shrinks to fit its box.
+- **Editing:** tap any box to change it. Title left empty uses the project name; date left empty always shows today (e.g. SEP 27 2026). Roll, scene and take take letters too (A003, 12B).
+- **Take + / −** on the right steps the take, keeping letters and zero padding (12A → 13A, 009 → 010).
+- **Clap:** tap the sticks and the top one swings open and snaps shut, with a firm buzz on the phone as it closes.
+- One board per project, shared live with everyone on it (a second AC can bump the take). The project page card shows the current scene and take.
+
 ## Project layout
 
 ```
@@ -101,13 +110,14 @@ src/app/                    screens (Expo Router: every file is a route)
   project/[id]/shot-lists.tsx      shot lists
   project/[id]/shot-list/[sid].tsx one list: tiles, Start, Done / Active / Uncheck
   project/[id]/shot-tracker.tsx    live tracker: list · last done · active
+  project/[id]/slate.tsx           clapboard (landscape)
   project/[id]/settings.tsx   project settings (gear, top right): sharing, notifications, rename, delete/leave
   account.tsx               sign in (Apple, Google, email) / account
   auth-callback.tsx         opened by the confirm-email link
   reset-password.tsx        opened by the reset-password link
   groups.tsx                saved user groups
 src/components/     shared UI (ScheduleGraph, clip naming, sun compass, time slider, place picker, weather cards)
-src/lib/            logic, theme, fonts, hooks (sun.ts, tz.ts, weather.ts, shots.ts are pure + unit tested)
+src/lib/            logic, theme, fonts, hooks (sun.ts, tz.ts, weather.ts, shots.ts, slate.ts are pure + unit tested)
   push.ts           push notifications on the device (permission, token, tap to open)
 tests/              unit tests (node --test)
 ```
