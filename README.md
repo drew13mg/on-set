@@ -71,6 +71,15 @@ The places you're considering for the project.
 - **Location notes:** **+ Add note** for as many notes as you need. **Press and hold** a note to edit or delete it.
 - Shared with everyone on the project. Photos are kept on the phone that took them and upload in the background when signed in and online; teammates see a placeholder until the upload finishes. Stored in a private bucket only people on the project can access.
 
+### Shot List
+Numbered shot tiles to track the shoot.
+
+- **Lists:** **New shot list**, or tap a list to open and edit it. **Press and hold** a list to **Edit name**, **Duplicate** (copies every shot, all unchecked; you're asked to name the copy straight away) or **Delete**.
+- **Shots:** square numbered tiles, **3 across, up to 40 rows (120 shots)**. Tap **+** to add a shot; **hold +** to add several at once. Numbers stay with their shot (deleting one leaves a gap, like paperwork). Hold a tile to delete that shot.
+- **Marking:** tap a tile to select it, then use the buttons at the bottom: **Done** turns it red, **Active** turns it green, **Uncheck** puts it back.
+- **Start** (top of a list) makes it the project's **active shot list** — only one at a time; starting another stops the previous. Tap the green "Active" bar to stop. The active list is available to other tools via `useActiveShotList(projectId)` in `src/lib/shots-store.tsx`.
+- Shared live with everyone on the project.
+
 ## Project layout
 
 ```
@@ -85,6 +94,8 @@ src/app/                    screens (Expo Router: every file is a route)
   project/[id]/equipment.tsx
   project/[id]/locations.tsx       location scouting list
   project/[id]/location/[lid].tsx  one location: photos + notes (PhotoViewer for full screen)
+  project/[id]/shot-lists.tsx      shot lists
+  project/[id]/shot-list/[sid].tsx one list: tiles, Start, Done / Active / Uncheck
   project/[id]/settings.tsx   project settings (gear, top right): sharing, rename, delete/leave
   account.tsx               sign in (Apple, Google, email) / account
   auth-callback.tsx         opened by the confirm-email link

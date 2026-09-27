@@ -50,6 +50,23 @@ export type LocationPhotoRow = Synced & {
   localUri?: string;
 };
 
+export type ShotStatus = "none" | "active" | "done";
+export type ShotListRow = Synced & {
+  projectId: string;
+  name: string;
+  /** When the list was started (the project's active shot list); null when not started. */
+  startedAt: number | null;
+  createdAt: number;
+};
+export type ShotRow = Synced & {
+  projectId: string;
+  listId: string;
+  number: number;
+  status: ShotStatus;
+  description: string;
+  createdAt: number;
+};
+
 export type Tables = {
   projects: ProjectRow;
   transcriptions: TranscriptionRow;
@@ -60,6 +77,8 @@ export type Tables = {
   locations: LocationRow;
   locationNotes: LocationNoteRow;
   locationPhotos: LocationPhotoRow;
+  shotLists: ShotListRow;
+  shots: ShotRow;
 };
 export type TableName = keyof Tables;
 
@@ -74,9 +93,21 @@ export const TABLE_ORDER: TableName[] = [
   "locations",
   "locationNotes",
   "locationPhotos",
+  "shotLists",
+  "shots",
 ];
 /** Tables whose rows belong to a project. */
-export const PROJECT_TABLES: TableName[] = ["transcriptions", "lines", "clips", "equipment", "locations", "locationNotes", "locationPhotos"];
+export const PROJECT_TABLES: TableName[] = [
+  "transcriptions",
+  "lines",
+  "clips",
+  "equipment",
+  "locations",
+  "locationNotes",
+  "locationPhotos",
+  "shotLists",
+  "shots",
+];
 
 export const REMOTE_NAME: Record<TableName, string> = {
   projects: "projects",
@@ -88,6 +119,8 @@ export const REMOTE_NAME: Record<TableName, string> = {
   locations: "locations",
   locationNotes: "location_notes",
   locationPhotos: "location_photos",
+  shotLists: "shot_lists",
+  shots: "shots",
 };
 
 type RemoteRow = Record<string, unknown>;
@@ -257,6 +290,50 @@ export const MAP: { [T in TableName]: { toRemote: (r: Tables[T]) => RemoteRow; f
       width: r.width == null ? null : num(r.width),
       height: r.height == null ? null : num(r.height),
       uploaded: !!r.uploaded,
+      createdAt: num(r.created_ms),
+      updatedMs: num(r.updated_ms),
+      deleted: !!r.deleted,
+    }),
+  },
+  shotLists: {
+    toRemote: (r) => ({
+      id: r.id,
+      project_id: r.projectId,
+      name: r.name,
+      started_ms: r.startedAt,
+      created_ms: r.createdAt,
+      updated_ms: r.updatedMs,
+      deleted: r.deleted,
+    }),
+    fromRemote: (r) => ({
+      id: String(r.id),
+      projectId: String(r.project_id),
+      name: String(r.name),
+      startedAt: r.started_ms == null ? null : num(r.started_ms),
+      createdAt: num(r.created_ms),
+      updatedMs: num(r.updated_ms),
+      deleted: !!r.deleted,
+    }),
+  },
+  shots: {
+    toRemote: (r) => ({
+      id: r.id,
+      project_id: r.projectId,
+      list_id: r.listId,
+      number: r.number,
+      status: r.status,
+      description: r.description,
+      created_ms: r.createdAt,
+      updated_ms: r.updatedMs,
+      deleted: r.deleted,
+    }),
+    fromRemote: (r) => ({
+      id: String(r.id),
+      projectId: String(r.project_id),
+      listId: String(r.list_id),
+      number: num(r.number),
+      status: (["none", "active", "done"].includes(String(r.status)) ? r.status : "none") as ShotStatus,
+      description: String(r.description ?? ""),
       createdAt: num(r.created_ms),
       updatedMs: num(r.updated_ms),
       deleted: !!r.deleted,
