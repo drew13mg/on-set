@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { router, Stack } from "expo-router";
+import { router, Stack, useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PromptModal } from "@/components/PromptModal";
 import { useProjectClips } from "@/lib/clips-store";
+import { useProjectEquipment } from "@/lib/equipment-store";
+import { progress } from "@/lib/equipment";
 import { useCurrentProject, useProjects } from "@/lib/projects-store";
 import { useNow } from "@/lib/useNow";
 import { formatTimeOfDay } from "@/lib/clips";
 import { colors, radius, space, type } from "@/lib/theme";
 
-type ToolRoute = "/project/[id]/transcribe" | "/project/[id]/clips" | "/project/[id]/sun";
+type ToolRoute = "/project/[id]/transcribe" | "/project/[id]/clips" | "/project/[id]/sun" | "/project/[id]/equipment";
 type Tool = { title: string; description: string; route: ToolRoute; meta?: string };
 
 /** A project's tools. New ON SET tools get added to the list below. */
@@ -17,6 +19,9 @@ export default function ProjectHome() {
   const { id, project } = useCurrentProject();
   const { renameProject } = useProjects();
   const { clips } = useProjectClips(id);
+  const { list: gear, reload: reloadGear } = useProjectEquipment(id);
+  useFocusEffect(useCallback(() => reloadGear(), [reloadGear]));
+  const gearProgress = progress(gear);
   const now = useNow();
   const [renaming, setRenaming] = useState(false);
 
@@ -36,6 +41,12 @@ export default function ProjectHome() {
       title: "Sun Tracker",
       description: "Where the sun will be at any time and date, with live weather on location.",
       route: "/project/[id]/sun",
+    },
+    {
+      title: "Equipment",
+      description: "Build the gear list from saved equipment, then check items off as they arrive.",
+      route: "/project/[id]/equipment",
+      meta: gearProgress.total ? `${gearProgress.have}/${gearProgress.total} checked` : undefined,
     },
   ];
 

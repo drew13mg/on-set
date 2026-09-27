@@ -33,6 +33,15 @@ Where the sun will be at any time and date, anywhere, plus live weather there.
 - **Live weather:** current conditions, refreshed every 10 minutes and when you return to the app; pull down to refresh.
 - All times are the **location's local time**, so you can scout another city from anywhere.
 
+### Equipment
+Build a gear list for the project, then use it as a checklist.
+
+- **Build the list:** type equipment and tap **Add**. With *Save to My equipment* on (the default), it's saved for every future project. Turn it off for one-off items that belong to this project only.
+- **My equipment:** saved gear appears as small buttons under the text box, A–Z. Tap to add to (or take off) this project; typing filters them.
+- **Save list** turns the selection into the reference checklist.
+- **Checklist:** every item is a button; tap to turn it green and confirm you have it. A progress bar shows how many are checked; **Clear all checks** resets. **Edit list** goes back to adding or removing items.
+- **Press and hold** any equipment button (in either view) to **edit** its name or **delete** it. Editing saved equipment updates it in every project.
+
 Weather and place search use [Open-Meteo](https://open-meteo.com) (free, no API key). Street addresses use the phone's built-in geocoder.
 
 ## Project layout
@@ -45,6 +54,7 @@ src/app/                    screens (Expo Router: every file is a route)
   project/[id]/transcribe.tsx
   project/[id]/clips.tsx
   project/[id]/sun.tsx
+  project/[id]/equipment.tsx
 src/components/     shared UI (clip naming, sun compass, time slider, place picker, weather cards)
 src/lib/            logic, theme, fonts, hooks (sun.ts, tz.ts, weather.ts are pure + unit tested)
 tests/              unit tests (node --test)
