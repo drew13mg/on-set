@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as AppleAuthentication from "expo-apple-authentication";
 import Svg, { Path } from "react-native-svg";
 import { ActionSheet } from "@/components/ActionSheet";
+import { EmailAuthForm } from "@/components/EmailAuthForm";
 import { SignInCancelled, signInErrorMessage, useAuth } from "@/lib/auth";
 import { clearDeviceData, useSync, useSyncStatus } from "@/lib/sync/SyncProvider";
 import { supabase } from "@/lib/supabase";
@@ -96,7 +97,7 @@ export default function Account() {
   if (!me) {
     return (
       <SafeAreaView style={styles.safe} edges={["bottom"]}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Text style={type.title}>Sign in</Text>
           <Text style={[type.body, { color: colors.muted }]}>
             Sign in to share projects with your crew and keep them on all your devices. Everyone on a project sees changes as they
@@ -124,6 +125,14 @@ export default function Account() {
             </Pressable>
           </View>
           {error ? <Text style={[type.small, { color: colors.markOut }]}>{error}</Text> : null}
+
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={type.label}>or use email</Text>
+            <View style={styles.orLine} />
+          </View>
+          <EmailAuthForm onSignedIn={() => router.canGoBack() && router.back()} />
+
           <Text style={[type.small, { color: colors.faint, marginTop: space.lg }]}>
             Projects you've already made on this phone are kept and uploaded to your account when you sign in.
           </Text>
@@ -226,6 +235,8 @@ const styles = StyleSheet.create({
   },
   itemLast: { borderBottomWidth: 0 },
   pressed: { backgroundColor: colors.surfaceRaised },
+  orRow: { flexDirection: "row", alignItems: "center", gap: space.md, marginVertical: space.md },
+  orLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   deleteLink: { alignSelf: "center", paddingVertical: space.md },
   signOut: {
     marginTop: space.xl,

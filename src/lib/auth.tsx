@@ -7,6 +7,7 @@ import * as WebBrowser from "expo-web-browser";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { uuid } from "./id";
+import { parseAuthLink } from "./email-auth";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -20,6 +21,15 @@ type AuthCtx = {
   nativeApple: boolean;
   signInWithApple: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  /** Existing account: email + password. */
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  /** New account: the person creates their password. Returns whether an email confirmation is required first. */
+  signUpWithEmail: (email: string, password: string, name?: string) => Promise<{ needsConfirmation: boolean }>;
+  resendConfirmation: (email: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+  /** Finish sign-in from a link in a confirmation or reset email. */
+  completeEmailLink: (url: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -105,13 +115,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(() => browserSignIn("google"), []);
 
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    if (error) throw error;
+  }, []);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string, name?: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+      options: {
+        emailRedirectTo: Linking.createURL("auth-callback"),
+        data: name?.trim() ? { full_name: name.trim() } : undefined,
+      },
+    });
+    if (error) throw error;
+    // Supabase hides whether an address is already registered: an existing account comes back with no identities.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      throw new Error("User already registered");
+    }
+    return { needsConfirmation: !data.session };
+  }, []);
+
+  const resendConfirmation = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim().toLowerCase(),
+      options: { emailRedirectTo: Linking.createURL("auth-callback") },
+    });
+    if (error) throw error;
+  }, []);
+
+  const sendPasswordReset = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: Linking.createURL("reset-password"),
+    });
+    if (error) throw error;
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  }, []);
+
+  const completeEmailLink = useCallback(async (url: string) => {
+    const { code, error } = parseAuthLink(url);
+    if (error) throw new Error(error);
+    if (!code) return;
+    const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+    if (exErr) {
+      // The same link can arrive twice (e.g. after the browser sign-in already used it).
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw exErr;
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);
 
   const value = useMemo(
-    () => ({ ready, session, me: toMe(session), nativeApple, signInWithApple, signInWithGoogle, signOut }),
-    [ready, session, nativeApple, signInWithApple, signInWithGoogle, signOut],
+    () => ({
+      ready,
+      session,
+      me: toMe(session),
+      nativeApple,
+      signInWithApple,
+      signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
+      resendConfirmation,
+      sendPasswordReset,
+      updatePassword,
+      completeEmailLink,
+      signOut,
+    }),
+    [
+      ready,
+      session,
+      nativeApple,
+      signInWithApple,
+      signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
+      resendConfirmation,
+      sendPasswordReset,
+      updatePassword,
+      completeEmailLink,
+      signOut,
+    ],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

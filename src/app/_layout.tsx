@@ -52,6 +52,8 @@ export default function RootLayout() {
           <Stack.Screen name="project/[id]/settings" options={{ title: "Project settings", presentation: "modal" }} />
           <Stack.Screen name="groups" options={{ title: "User groups" }} />
           <Stack.Screen name="account" options={{ title: "Account", presentation: "modal" }} />
+          <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
+          <Stack.Screen name="reset-password" options={{ title: "Reset password" }} />
         </Stack>
         </ProjectsProvider>
       </SyncProvider>

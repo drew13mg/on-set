@@ -3,7 +3,7 @@
 A toolkit for creatives working on large productions. iOS and Android, built with Expo (SDK 57) and Expo Router.
 
 ## Projects
-The first screen. The account button (top right) signs you in with Apple or Google; the dot under the title shows sync status. Tap **New project** to start one (it opens straight into its tools), or tap a project in the list to open it. The list shows the most recently used first. **Press and hold** a project to rename or delete it (deleting also removes its clips and saved location). Everything in the tools below belongs to the open project.
+The first screen. The account button (top right) signs you in with Apple, Google, or email + password; the dot under the title shows sync status. Tap **New project** to start one (it opens straight into its tools), or tap a project in the list to open it. The list shows the most recently used first. **Press and hold** a project to rename or delete it (deleting also removes its clips and saved location). Everything in the tools below belongs to the open project.
 
 **Join a project with a code** (under New project) joins a project someone shared with you by invite code.
 
@@ -74,7 +74,9 @@ src/app/                    screens (Expo Router: every file is a route)
   project/[id]/sun.tsx
   project/[id]/equipment.tsx
   project/[id]/settings.tsx   project settings (gear, top right): sharing, rename, delete/leave
-  account.tsx               sign in / account
+  account.tsx               sign in (Apple, Google, email) / account
+  auth-callback.tsx         opened by the confirm-email link
+  reset-password.tsx        opened by the reset-password link
   groups.tsx                saved user groups
 src/components/     shared UI (clip naming, sun compass, time slider, place picker, weather cards)
 src/lib/            logic, theme, fonts, hooks (sun.ts, tz.ts, weather.ts are pure + unit tested)
@@ -94,10 +96,17 @@ App side: `src/lib/sync/` is the offline-first sync engine (device copy → uplo
 
 ## Sign-in setup (needed before anyone can sign in)
 
-Sign-in buttons are built in, but Apple and Google each need a one-time setup in their developer consoles, then the keys go into Supabase.
+**Email + password** works with Supabase's built-in email sign-in (on by default). People tap *New here? Create an account*, enter their email, an optional name, and create a password (at least 8 characters, letters and numbers, typed twice). Returning users sign in with email + password; **Forgot password?** emails a link that opens ON SET to choose a new one.
 
-**1. Supabase redirect URL**
-Supabase dashboard → Authentication → URL Configuration → *Redirect URLs* → add `onset://auth-callback`.
+Email setup in Supabase:
+- Authentication → URL Configuration → *Redirect URLs*: add `onset://auth-callback` and `onset://reset-password`.
+- Authentication → Sign In / Providers → Email: keep **Confirm email** on (new accounts confirm their address before first sign-in). Set *Minimum password length* to 8 to match the app.
+- **Before real users:** Supabase's built-in email sender only delivers to your own team's addresses and a few emails per hour. Add your own SMTP (Authentication → Emails → SMTP Settings; e.g. Resend, Postmark, SendGrid or your company mail server) so confirmation and reset emails reach everyone. You can also edit the email wording there.
+
+Apple and Google each need a one-time setup in their developer consoles, then the keys go into Supabase.
+
+**1. Supabase redirect URLs**
+Supabase dashboard → Authentication → URL Configuration → *Redirect URLs* → add `onset://auth-callback` and `onset://reset-password`.
 
 **2. Google**
 1. Google Cloud Console → APIs & Services → Credentials → *Create OAuth client ID* → type **Web application**.
